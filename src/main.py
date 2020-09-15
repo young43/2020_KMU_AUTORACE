@@ -24,30 +24,56 @@ def img_process(img):
     ratio = brightness / minimum_brightness
     bright_img = cv2.convertScaleAbs(img, alpha = 1 / ratio, beta = 0)
 
-
     gray = cv2.cvtColor(bright_img, cv2.COLOR_BGR2GRAY)
 
     kernel_size = 5
     blur = cv2.GaussianBlur(gray, (kernel_size, kernel_size), 0)
 
-    low_threshold = 40
+    low_threshold = 60
     high_threshold = 70
     edge = cv2.Canny(np.uint8(blur), low_threshold, high_threshold)
 
+    ret, thres_img = cv2.threshold(edge, 70, 255, cv2.THRESH_BINARY)
+    cv2.imshow("edge", thres_img)
+
     return edge
+
+
+def roi_rectangle(img):
+    width, height = img[:2]
+
+    vertices = np.array(
+        [[(50, height),
+          (width / 2 - 45, height / 2 + 60),
+          (width / 2 + 45, height / 2 + 60),
+          (width - 50, height)]], dtype=np.int32)
+
+    mask = np.zeros_like(img)  # mask = img와 같은 크기의 빈 이미지
+
+    # vertices에 정한 점들로 이뤄진 다각형부분(ROI 설정부분)을 color로 채움
+    cv2.fillPoly(mask, vertices, 255)
+
+    # 이미지와 color로 채워진 ROI를 합침
+    roi_image = cv2.bitwise_and(img, mask)
+
+    return roi_image
 
 
 def warpper_process(img):
     ret, thres_img = cv2.threshold(img, 70, 255, cv2.THRESH_BINARY)
 
-    kernel = np.ones((5,5), np.uint8)
-    dilate = cv2.dilate(thres_img, kernel, 5)
+    kernel = np.ones((3,3), np.uint8)
+    dilate = cv2.dilate(thres_img, kernel, 3)
+
+    # kernel = np.ones((5, 5), np.uint8)
+    # result = cv2.morphologyEx(thres_img, cv2.MORPH_CLOSE, kernel)
+
 
 
     sharp = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-    sharp_img = cv2.filter2D(thres_img, -1, sharp)
+    sharp_img = cv2.filter2D(dilate, -1, sharp)
 
-    return thres_img
+    return sharp_img
 
 
 def calc_angle(distance):
