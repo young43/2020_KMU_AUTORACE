@@ -1,0 +1,47 @@
+
+#!/usr/bin/env python
+
+import numpy as np
+import math
+import cv2
+
+class Pose:
+
+    def __init__(self):
+        self.pose = [0.0, 0.0]
+
+    def clear(self):
+        self.pose = [0.0, 0.0]
+
+
+    def calc_ahead(self, angle, speed):
+        dt_x = ((speed) * math.sin(angle * np.pi / 180) * 0.01)
+        dt_y = ((speed) * math.cos(angle * np.pi / 180) * 0.01)
+
+        self.pose[0] += dt_x
+        self.pose[1] -= dt_y
+
+        return self.pose
+
+    def get_curpose(self):
+        return self.pose
+
+
+    def get_midpoint(self, circle, MODE="LEFT"):
+        if MODE == "LEFT":
+            mid_pose = [circle.x + 0.2, circle.y-0.05]
+        else:
+            mid_pose = [circle.x - 0.2, circle.y-0.05]
+        return mid_pose
+
+    def get_goalpoint(self, circle, MODE="LEFT"):
+        if MODE == "LEFT":
+            goal_pose = [0, circle.y - 0.38]
+        else:
+
+            goal_pose = [0, circle.y - 0.38]
+
+        return goal_pose
+
+
+
