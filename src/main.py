@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 
 import cv2
 import threading
@@ -7,48 +9,74 @@ import numpy as np
 
 from slidewindow import SlideWindow
 from warper import Warper
+from pidcal import PidCal
+from CurveDetector import Curve
+
+
 
 
 def img_process(img):
     cols, rows, ch = img.shape
     brightness = np.sum(img) / (255 * cols * rows)
 
-    minimum_brightness = 0.55
+    minimum_brightness = 0.75
     ratio = brightness / minimum_brightness
     bright_img = cv2.convertScaleAbs(img, alpha = 1 / ratio, beta = 0)
+
 
     gray = cv2.cvtColor(bright_img, cv2.COLOR_BGR2GRAY)
 
     kernel_size = 5
     blur = cv2.GaussianBlur(gray, (kernel_size, kernel_size), 0)
 
-    low_threshold = 50
-    high_threshold = 120
+    low_threshold = 60
+    high_threshold = 70
     edge = cv2.Canny(np.uint8(blur), low_threshold, high_threshold)
+
+
 
     return edge
 
 
 def warpper_process(img):
-    ret, thres_img = cv2.threshold(img, 80, 255, cv2.THRESH_BINARY)
+    ret, thres_img = cv2.threshold(img, 70, 255, cv2.THRESH_BINARY)
 
     kernel = np.ones((5,5), np.uint8)
-    dilate = cv2.dilate(thres_img, kernel, 3)
+    dilate = cv2.dilate(thres_img, kernel, 5)
+
 
     sharp = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-    sharp_img = cv2.filter2D(dilate, -1, sharp)
+    sharp_img = cv2.filter2D(thres_img, -1, sharp)
 
-    return sharp_img
+    return thres_img
 
 
+def calc_angle(distance):
+    # atan2(double y, double x)
+    if abs(distance) < 35:
+        angle = round((np.arctan2(distance, 220) * 180 / np.pi), 2)
+    else:
+        angle = round((np.arctan2(distance, 130) * 180 / np.pi), 2)
 
-warper = None
+    if angle < 0:
+        angle = max(-50, angle)
+    else:
+        angle = min(50, angle)
+
+    return angle
+
+
 slidewindow  = SlideWindow()
-
+pidcal = PidCal()
+curve_detector = Curve()
+warper = None
 def main():
-    flag = False
-    cap = cv2.VideoCapture("org2.avi")
+    global warper
 
+    flag = False
+    cap = cv2.VideoCapture("../video/org2.avi")
+
+    x_location_old = None
 
     while True:
 
@@ -58,26 +86,42 @@ def main():
         # 캡쳐되지 않은 경우 처리
         if not ret:
             break
-        if cv2.waitKey(1) & 0xFF == 27:
+        if cv2.waitKey(0) & 0xFF == 27:
             break
 
-        # Warper 객체 생성 (초기 1번만)
-        if not flag:
-            flag = True
-            global  warper
+        if warper == None:
             warper = Warper(img)
 
         # warper, slidewindow 실행
-        # slideImage, x_location = process_image(img)
         process_img = img_process(img)
         warp_img = warper.warp(process_img)
         process_img2 = warpper_process(warp_img)
 
+        # slidewindow.w_slidewindow2(process_img2)
+        # slideImage, x_location = slidewindow.slidewindow(process_img2, MODE="PARKING")
+        # mid_point = slidewindow.get_midpoint(MODE="PARKING")
+
         slideImage, x_location = slidewindow.slidewindow(process_img2)
+        mid_point = slidewindow.get_midpoint()
 
+        # print(x_location, mid_point)
 
+        if x_location != None:
+            # test 4 lines
+            if curve_detector.curve_count == 3 and np.abs(x_location - x_location_old) > 40:
+                x_location = x_location_old
+            else:
+                x_location_old = x_location
 
+            angle = calc_angle(x_location - mid_point)
 
+        else:
+            angle = calc_angle(x_location_old - mid_point)
+
+        curve_detector.update(angle)
+
+        # print(angle, x_location - mid_point)
+        # print(Angle, curve.get_avg(), curve.is_curve())
 
         # cv2.imshow("originImage", img)
         # cv2.imshow("warper", warper.warp(img))
