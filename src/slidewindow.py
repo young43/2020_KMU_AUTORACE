@@ -18,7 +18,7 @@ class SlideWindow:
         self.pre_rightx = 0
 
         self.pre_xlocation = 0
-        self.lane_width_hold = 230
+        self.lane_width_hold = 260
 
         self.line_flag = 0
 
@@ -27,11 +27,11 @@ class SlideWindow:
         self.y_margin = 440
         self.x_margin = 0
 
-    def w_slidewindow(self, img, dist_threshold=230):
+    def w_slidewindow(self, img, dist_threshold=260):
         height, width = img.shape
         # print("Image Width : {}   Image Height : {}".format(width, height))
 
-        roi_img = img[height-100:height-50, :].copy()
+        roi_img = img[height-90:height-40, :].copy()
         roi_height, roi_width = roi_img.shape
 
         # print("ROI Width : {}   ROI Height : {}".format(roi_width, roi_height))
@@ -42,10 +42,8 @@ class SlideWindow:
         window_width = 20
 
         # minpix : 30% number of total window pixel
-        minpix = 8
+        minpix = 7
         n_windows = roi_width // window_width // 2
-
-
 
         nonzero = roi_img.nonzero()
         nonzeroy = np.array(nonzero[0])
@@ -56,7 +54,6 @@ class SlideWindow:
 
         pts_center = np.array([[x_center, 0], [x_center, roi_height]], np.int32)
         cv2.polylines(cf_img, [pts_center], False, (0, 120, 120), 1)
-
 
         left_idx = 0
         right_idx = 0
@@ -104,7 +101,7 @@ class SlideWindow:
 
             if len(good_left_inds) > minpix and find_left is False:
                 tmp_x = np.int(np.mean(nonzerox[good_left_inds]))
-                if abs(tmp_x - x_center) > int((self.lane_width_hold*0.38)):
+                if abs(tmp_x - x_center) > int((self.lane_width_hold*0.4)):
                     find_left = True
                     left_start_x = np.int(np.mean(nonzerox[good_left_inds]))
                     left_start_y = roi_height // 2
@@ -119,7 +116,7 @@ class SlideWindow:
             if len(good_right_inds) > minpix and find_right is False:
 
                 tmp_x = np.int(np.mean(nonzerox[good_right_inds]))
-                if abs(tmp_x - x_center) > int((self.lane_width_hold * 0.38)):
+                if abs(tmp_x - x_center) > int((self.lane_width_hold * 0.4)):
                     find_right = True
                     right_start_x = np.int(np.mean(nonzerox[good_right_inds]))
                     right_start_y = roi_height // 2
@@ -141,25 +138,25 @@ class SlideWindow:
                     self.pre_leftx = left_start_x
                     self.pre_rightx = right_start_x
 
-                    self.mid_point = (left_start_x+right_start_x) // 2
-
+                    self.mid_point = (left_start_x + right_start_x) // 2
                     break
 
 
         if left_start_x != None and right_start_x == None:
-            # self.mid_point = int(min(width, leftx_current + (self.lane_width_hold*0.55)))
             right_start_x = int(min(width-50, left_start_x + (self.lane_width_hold)))
             self.pre_rightx = right_start_x
             self.line_flag = 1
 
         if right_start_x != None and left_start_x == None:
-            # self.mid_point = int(max(0, rightx_current - (self.lane_width_hold*0.55)))
             left_start_x = int(max(50, right_start_x - (self.lane_width_hold)))
             self.pre_leftx = left_start_x
             self.line_flag = 2
 
-
-        # print(left_start_x, right_start_x)
+        # mid_point 저장
+        if left_start_x != None and right_start_x != None:
+            temp = (left_start_x + right_start_x) // 2
+            if abs(temp-self.mid_point) < 100 and (200 < temp < width-200):
+                self.mid_point = temp
 
         return True, left_start_x, right_start_x, cf_img
 
@@ -343,8 +340,8 @@ class SlideWindow:
 
         for window in range(nwindows):
             # Identify window boundaries in x and y (and right and left)
-            win_y_low = (img.shape[0]-10) - (window + 1) * window_height
-            win_y_high = (img.shape[0]-10) - window * window_height
+            win_y_low = (img.shape[0]) - (window + 1) * window_height
+            win_y_high = (img.shape[0]) - window * window_height
 
             win_xleft_low = leftx_current - margin
             win_xleft_high = leftx_current + margin
@@ -354,11 +351,11 @@ class SlideWindow:
 
 
             if self.line_flag == 1:     # left
-                win_xright_low = (leftx_current+(self.lane_width_hold+30)) - margin
-                win_xright_high = (leftx_current+(self.lane_width_hold+30)) + margin
+                win_xright_low = (leftx_current+(self.lane_width_hold)) - margin
+                win_xright_high = (leftx_current+(self.lane_width_hold)) + margin
             elif self.line_flag == 2:   # right
-                win_xleft_low = (rightx_current-(self.lane_width_hold+30)) - margin
-                win_xleft_high = (rightx_current-(self.lane_width_hold+30)) + margin
+                win_xleft_low = (rightx_current-(self.lane_width_hold)) - margin
+                win_xleft_high = (rightx_current-(self.lane_width_hold)) + margin
 
 
             # Draw the windows on the visualization image
@@ -417,15 +414,15 @@ class SlideWindow:
             rx_current = np.int(np.polyval(right_fit, win_y_high))
 
 
-        if lx_current == None and rx_current != None:
-            print("only right")
-            left_fit = np.polyfit(righty, rightx - (self.lane_width_hold+70), 2)
-            lx_current = np.int(np.polyval(left_fit, win_y_high))
-
-        if rx_current == None and lx_current != None:
-            print("only left")
-            right_fit = np.polyfit(lefty, leftx + (self.lane_width_hold+70), 2)
-            rx_current = np.int(np.polyval(right_fit, win_y_high))
+        # if lx_current == None and rx_current != None:
+        #     print("only right")
+        #     left_fit = np.polyfit(righty, rightx - (self.lane_width_hold), 2)
+        #     lx_current = np.int(np.polyval(left_fit, win_y_high))
+        #
+        # if rx_current == None and lx_current != None:
+        #     print("only left")
+        #     right_fit = np.polyfit(lefty, leftx + (self.lane_width_hold), 2)
+        #     rx_current = np.int(np.polyval(right_fit, win_y_high))
 
         # print(lx_current, rx_current)
 
@@ -436,11 +433,11 @@ class SlideWindow:
             # 검출하지 못했을 때 예외처리
             if lx_current == None and rx_current != None:
                 print("only right2")
-                x_location = rx_current - int(self.lane_width_hold * 0.52)
+                x_location = rx_current - int(self.lane_width_hold * 0.5)
 
             if rx_current == None and lx_current != None:
                 print("only left2")
-                x_location = lx_current + int(self.lane_width_hold * 0.52)
+                x_location = lx_current + int(self.lane_width_hold * 0.5)
 
         # 그 이전 좌표를 가져오도록 함.
         if x_location != None:

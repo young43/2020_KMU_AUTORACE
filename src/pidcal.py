@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 class PidCal:
     error_sum = 0
     error_old = 0
@@ -10,10 +8,10 @@ class PidCal:
     def __init__(self):
         # print "init PidCal"
         self.x = 0
-        self.safe_distance = 0
+        self.setpoint = 325
 
     def cal_error(self):
-        return self.safe_distance - self.x
+        return self.x - self.setpoint
 
     # twiddle is for optimize the kp,ki,kd
     def twiddle(self, setpoint=318):
@@ -48,31 +46,37 @@ class PidCal:
 
     # setpoint is the center and the x_current is where the car is
     # width = 640, so 320 is the center but 318 is more accurate in real
-    def pid_control(self, distance, safe_distance=0):
-        self.x = distance
-        self.safe_distance = safe_distance
-        error = safe_distance - distance
+    def pid_control(self, x_current, curve_count, setpoint=325):
+        # print "HHHHHHHHHHHHHHH"
+        # print x_current
+        self.setpoint = setpoint
+        err = abs(self.setpoint - x_current)
 
-        if abs(error) > 0.8:
-            self.p[0] = 0.0025
+        if curve_count < 2 and err < 50:
+            self.p[0] = 0.0020
             self.p[1] = 0.000005
             self.p[2] = 0.005
-
+            # p = [0.0020, 0.000005, 0.005]
+            # self.dp[0] = self.p[0]/10
+            # self.dp[1] = self.p[1]/10
+            # self.dp[2] = self.p[2]/10
+            # dp = [p[0]/10, p[1]/10, p[2]/10] # to twiddle kp, ki, kd
         else:
-            self.p[0] = 0.025
+            self.p[0] = 0.0035
             self.p[1] = 0.000005
             self.p[2] = 0.005
+            # p = [0.0020, 0.000005, 0.005]
+            # self.dp[0] = self.p[0]/10
+            # self.dp[1] = self.p[1]/10
+            # self.dp[2] = self.p[2]/10
+            # dp = [p[0]/10, p[1]/10, p[2]/10] # to twiddle kp, ki, kd
+            # p = [0.0035, 0.000005, 0.005] # optimized kp,ki,kd original
+            # dp = [p[0]/10, p[1]/10, p[2]/10] # to twiddle kp, ki, kd
 
-        # self.p[0] = 0.0035
-        # self.p[1] = 0.000005
-        # self.p[2] = 0.005
-
-
-
-        self.x = int(distance)
+        self.x = int(x_current)
         self.twiddle()
 
-
+        error =  x_current - setpoint
         p1 = round(self.p[0] * error, 9)
         self.error_sum += error
         i1 = round(self.p[1] * self.error_sum, 9)

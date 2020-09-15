@@ -5,6 +5,7 @@ import cv2
 import threading
 import time
 import numpy as np
+import math
 
 
 from slidewindow import SlideWindow
@@ -29,11 +30,9 @@ def img_process(img):
     kernel_size = 5
     blur = cv2.GaussianBlur(gray, (kernel_size, kernel_size), 0)
 
-    low_threshold = 60
+    low_threshold = 40
     high_threshold = 70
     edge = cv2.Canny(np.uint8(blur), low_threshold, high_threshold)
-
-
 
     return edge
 
@@ -112,6 +111,12 @@ def main():
                 x_location = x_location_old
             else:
                 x_location_old = x_location
+
+            pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count, mid_point), 6)
+            degree = np.rad2deg(pid)
+
+            print(pid, degree)
+
 
             angle = calc_angle(x_location - mid_point)
 

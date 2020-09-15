@@ -12,7 +12,6 @@ class Warper:
         height = image.shape[0]
         width = image.shape[1]
 
-
         src = np.float32([
             [0, 320],  # 좌상
             [0, 410],  # 좌하
@@ -20,9 +19,9 @@ class Warper:
             [width, 410],  # 우하
         ])
         dst = np.float32([
-            [-100, 0],
+            [-200, 0],
             [200, height],
-            [width + 100, 0],
+            [width + 150, 0],
             [width - 170, height],
         ])
 
