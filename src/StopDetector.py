@@ -77,33 +77,6 @@ class StopDetector:
 
         return False
 
-    # def check_crocss_walk(self, cross_img, warp_img, img):
-    #     template = cv2.imread("/home/nvidia/xycar_ws/src/racecar/img/cross.png", cv2.IMREAD_GRAYSCALE)
-    #     res = cv2.matchTemplate(cross_img, template, cv2.TM_CCOEFF)
-    #     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-    #
-    #     out_img = np.copy(warp_img)
-    #
-    #     # stop_roi = cv2.cvtColor(out_img[380:420, 140:550], cv2.COLOR_BGR2HSV)
-    #     stop_roi = out_img[390:420, 140:550]
-    #     cv2.rectangle(out_img, (140, 380), (550, 420), (210, 100, 55), 2)
-    #
-    #     # low_threshold = np.array([0, 0, 120], dtype=np.uint8)
-    #     # high_threshold = np.array([255, 255, 255], dtype=np.uint8)
-    #     #
-    #     # mask = cv2.inRange(stop_roi, low_threshold, high_threshold)
-    #     #
-    #     # cv2.imshow("mask", mask)
-    #
-    #     print("cross:", np.count_nonzero(stop_roi), min_loc)
-    #
-    #     if np.count_nonzero(stop_roi) > 1700 and not self.check_yellow_line(img):  # 정지선 nonzero 값 프린트 해서 조정
-    #         self.on_detected_crosswallk()
-    #         return True
-    #
-    #     return False
-
-
 
 if __name__ == '__main__':
     stop_counter = StopDetector()

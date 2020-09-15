@@ -46,6 +46,7 @@ now = datetime.now()
 
 warper = None
 slidewindow = SlideWindow()
+pidcal = PidCal()
 
 OBSTACLE_NUM = 3
 
@@ -362,14 +363,18 @@ def main():
             else:
                 x_location_old = x_location
 
-            angle = calc_angle(x_location - mid_point)
+            pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count, mid_point), 6)
+            angle = pid
+
             drive(angle, speed_default)
 
         else:
-            angle = calc_angle(x_location_old - mid_point)
+            pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count, mid_point), 6)
+            angle = pid
+
             drive(angle, speed_default)
 
-        curve_detector.update(angle)
+        curve_detector.update(pid)
         curve_detector.count_curve()
 
         # mode on
@@ -377,8 +382,6 @@ def main():
             MODE = 1
         elif MODE == 1 and obs_cnt < OBSTACLE_NUM:
             MODE = 2
-
-
 
 
         cv2.imshow("slidewindow", slideImage)
@@ -486,14 +489,21 @@ def test():
             else:
                 x_location_old = x_location
 
-            angle = calc_angle(x_location - mid_point)
+            pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count, mid_point), 6)
+            angle = pid
+
+            # angle = calc_angle(x_location - mid_point)
             drive(angle, speed_default)
 
         else:
-            angle = calc_angle(x_location_old - mid_point)
+            pid = round(pidcal.pid_control(int(x_location_old), curve_detector.curve_count, mid_point), 6)
+            angle = pid
+
+            # angle = calc_angle(x_location_old - mid_point)
             drive(angle, speed_default)
 
-        curve_detector.update(angle)
+
+        curve_detector.update(pid)
         curve_detector.count_curve()
 
 
@@ -503,7 +513,6 @@ def test():
         # cv2.imshow("processImage", tempImg)
 
         print(angle, x_location - mid_point)
-
 
     out.release()
     out2.release()

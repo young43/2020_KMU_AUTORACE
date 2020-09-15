@@ -315,6 +315,8 @@ class SlideWindow:
 
         ret, leftx_current, rightx_current, cf_img = self.w_slidewindow(img)
         cv2.imshow("w_roi", cf_img)
+
+
         # print(self.mid_point,  leftx_current, rightx_current)
 
         histogram = np.sum(img[height // 2:, :], axis=0)
@@ -405,11 +407,11 @@ class SlideWindow:
         right_fit = []
 
         # Fit a second order polynomial to each
-        if lefty != [] and leftx != [] and len(leftx) > 200:
+        if lefty != [] and leftx != [] and len(leftx) > 100:
             left_fit = np.polyfit(lefty, leftx, 2)
             lx_current = np.int(np.polyval(left_fit, win_y_high))
 
-        if righty != [] and rightx != [] and len(rightx) > 200:
+        if righty != [] and rightx != [] and len(rightx) > 100:
             right_fit = np.polyfit(righty, rightx, 2)
             rx_current = np.int(np.polyval(right_fit, win_y_high))
 
