@@ -29,18 +29,11 @@ def img_process(img):
     kernel_size = 5
     blur = cv2.GaussianBlur(gray, (kernel_size, kernel_size), 0)
 
-
     low_threshold = 60
     high_threshold = 70
     edge = cv2.Canny(np.uint8(blur), low_threshold, high_threshold)
 
-
-    ret, thres_img = cv2.threshold(edge, 80, 255, cv2.THRESH_BINARY)
-    # cv2.imshow("edge", thres_img)
-
-    roi = roi_interest(thres_img)
-
-    cv2.imshow("roi", roi)
+    roi = roi_interest(edge)
 
     return roi
 
@@ -69,34 +62,17 @@ def roi_interest(img):
 
 def warpper_process(img):
 
-    # ret, thres_img = cv2.threshold(img, 70, 255, cv2.THRESH_BINARY)
+    ret, thres_img = cv2.threshold(img, 50, 255, cv2.THRESH_BINARY)
 
-    # kernel = np.ones((3,3), np.uint8)
-    # dilate = cv2.dilate(img, kernel, 3)
+    kernel = np.ones((3,3), np.uint8)
+    dilate = cv2.dilate(thres_img, kernel, 3)
 
-    kernel = np.ones((3, 3), np.uint8)
-    result = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
 
     sharp = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-    sharp_img = cv2.filter2D(img, -1, sharp)
+    sharp_img = cv2.filter2D(dilate, -1, sharp)
 
 
     return sharp_img
-
-
-def calc_angle(distance):
-    # atan2(double y, double x)
-    if abs(distance) < 35:
-        angle = round((np.arctan2(distance, 220) * 180 / np.pi), 2)
-    else:
-        angle = round((np.arctan2(distance, 130) * 180 / np.pi), 2)
-
-    if angle < 0:
-        angle = max(-50, angle)
-    else:
-        angle = min(50, angle)
-
-    return angle
 
 
 slidewindow  = SlideWindow()

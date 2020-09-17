@@ -407,13 +407,19 @@ class SlideWindow:
         right_fit = []
 
         # Fit a second order polynomial to each
-        if lefty != [] and leftx != [] and len(leftx) > 100:
-            left_fit = np.polyfit(lefty, leftx, 2)
-            lx_current = np.int(np.polyval(left_fit, win_y_high))
+        if lefty != [] and leftx != []:
+            ymin, ymax = np.min(lefty), np.max(lefty)
 
-        if righty != [] and rightx != [] and len(rightx) > 100:
-            right_fit = np.polyfit(righty, rightx, 2)
-            rx_current = np.int(np.polyval(right_fit, win_y_high))
+            if ymax-ymin > 80:
+                left_fit = np.polyfit(lefty, leftx, 2)
+                lx_current = np.int(np.polyval(left_fit, win_y_high))
+
+        if righty != [] and rightx != []:
+            ymin, ymax = np.min(righty), np.max(righty)
+
+            if ymax - ymin > 80:
+                right_fit = np.polyfit(righty, rightx, 2)
+                rx_current = np.int(np.polyval(right_fit, win_y_high))
 
 
         # if lx_current == None and rx_current != None:

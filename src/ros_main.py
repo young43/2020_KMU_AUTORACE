@@ -95,9 +95,9 @@ def img_process(img):
 
     minimum_brightness = 0.75
     ratio = brightness / minimum_brightness
-    bright_img = cv2.convertScaleAbs(img, alpha=1 / ratio, beta=0)
+    bright_img = cv2.convertScaleAbs(img, alpha = 1 / ratio, beta = 0)
 
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(bright_img, cv2.COLOR_BGR2GRAY)
 
     kernel_size = 5
     blur = cv2.GaussianBlur(gray, (kernel_size, kernel_size), 0)
@@ -106,48 +106,54 @@ def img_process(img):
     high_threshold = 70
     edge = cv2.Canny(np.uint8(blur), low_threshold, high_threshold)
 
-    return edge
+    roi = roi_interest(edge)
 
-def img_gray_process(img):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    return roi
 
-    kernel_size = 5
-    blur = cv2.GaussianBlur(gray, (kernel_size, kernel_size), 0)
 
-    return blur
+def roi_interest(img):
+    width, height = img.shape[:2]
+
+    vertices = np.array(
+        [[
+            (-300, 430),  # 좌하
+            (240, 280),   # 좌상
+            (420, 280),  # 우상
+            (width + 300, 430)   # 우하
+          ]], dtype=np.int32)
+
+    mask = np.zeros_like(img)  # mask = img와 같은 크기의 빈 이미지
+
+    # vertices에 정한 점들로 이뤄진 다각형부분(ROI 설정부분)을 color로 채움
+    cv2.fillPoly(mask, vertices, 255)
+
+    # 이미지와 color로 채워진 ROI를 합침
+    roi_image = cv2.bitwise_and(img, mask)
+
+    return roi_image
 
 
 def warpper_process(img):
-    ret, thres_img = cv2.threshold(img, 70, 255, cv2.THRESH_BINARY)
 
-    kernel = np.ones((5, 5), np.uint8)
-    dilate = cv2.dilate(thres_img, kernel, 5)
+    ret, thres_img = cv2.threshold(img, 50, 255, cv2.THRESH_BINARY)
+
+    kernel = np.ones((3,3), np.uint8)
+    dilate = cv2.dilate(thres_img, kernel, 3)
+
 
     sharp = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
     sharp_img = cv2.filter2D(dilate, -1, sharp)
 
-    return thres_img
+
+    return sharp_img
 
 
-def calc_angle(distance):
-    # atan2(double y, double x)
-    if abs(distance) < 100:
-        angle = round((np.arctan2(distance, 230) * 180 / np.pi), 2)
-    else:
-        angle = round((np.arctan2(distance, 130) * 180 / np.pi), 2)
-
-    if angle < 0:
-        angle = max(-50, angle)
-    else:
-        angle = min(50, angle)
-
-
-    return angle
 
 def calc_speed(MODE, curve_detector):
-    speed = 9
+    speed = 7
+
     if MODE == 1 or MODE == 2 or MODE == 3 or curve_detector.curve_count >= 3:
-        speed = 7
+        speed = 4
 
     return speed
 
@@ -182,11 +188,6 @@ def main():
         cv2.VideoWriter_fourcc("M", "J", "P", "G"), 30, (640, 480))
 
 
-    # out2 = cv2.VideoWriter(
-    #     "/home/nvidia/xycar_ws/src/racecar/video/cross.avi",
-    #     cv2.VideoWriter_fourcc("M", "J", "P", "G"), 30, (640, 480))
-
-
     print("------------- auto_race start!!! -------------")
     drive(0, 0)
     rospy.sleep(1)
@@ -199,7 +200,6 @@ def main():
 
     speed_default = 10
     speed_obstacle = 7.5
-
 
     MODE = 0
 
@@ -222,12 +222,9 @@ def main():
         process_img2 = warpper_process(warp_img)
 
         # tempImg = img_gray_process(cv_image)
-        if MODE == 3:
-            slideImage, x_location = slidewindow.slidewindow(process_img2, MODE="PARKING")
-            mid_point = slidewindow.get_midpoint(MODE="PARKING")
-        else:
-            slideImage, x_location = slidewindow.slidewindow(process_img2)
-            mid_point = slidewindow.get_midpoint(MODE)
+
+        slideImage, x_location = slidewindow.slidewindow(process_img2)
+        mid_point = slidewindow.get_midpoint(MODE)
 
         # curve 2번 돌고나서 obstacle
         POS, circle, distance = obstacle_detector.check(obstacles)
@@ -249,7 +246,6 @@ def main():
             MODE = 0
             drive(0, 0)
             rospy.sleep(5)
-
 
 
         # curve 2번 돌고나서 obstacle
@@ -433,7 +429,7 @@ def test():
     curve_detector = Curve()
     stop_detector = StopDetector()
 
-    speed_default = 10
+    speed_default = 4
     speed_obstacle = 7.5
 
     MODE = 0
@@ -442,6 +438,7 @@ def test():
 
     x_location = None
     x_location_old = None
+
 
     while not rospy.is_shutdown():
         global warper
@@ -456,18 +453,13 @@ def test():
         warp_img = warper.warp(process_img)
         process_img2 = warpper_process(warp_img)
 
-        # tempImg = img_gray_process(cv_image)
-        if MODE == 3:
-            slideImage, x_location = slidewindow.slidewindow(process_img2, MODE="PARKING")
-            mid_point = slidewindow.get_midpoint(MODE="PARKING")
-        else:
-            slideImage, x_location = slidewindow.slidewindow(process_img2)
-            mid_point = slidewindow.get_midpoint(MODE)
+        slideImage, x_location = slidewindow.slidewindow(process_img2)
+        mid_point = slidewindow.get_midpoint()
 
-        if np.all(cv_image):
-            out.write(cv_image)
-        if np.all(slideImage):
-            out2.write(slideImage)
+        # if np.all(cv_image):
+        #     out.write(cv_image)
+        # if np.all(slideImage):
+        #     out2.write(slideImage)
 
         # curve 2번 돌고나서 obstacle
         POS, circle, distance = obstacle_detector.check(obstacles)
@@ -477,7 +469,6 @@ def test():
             MODE = 0
             obs_cnt = 0
             curve_detector.curve_count = 0
-
 
 
         speed_default = calc_speed(MODE, curve_detector)
@@ -490,17 +481,11 @@ def test():
                 x_location_old = x_location
 
             pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count, mid_point), 6)
-            angle = pid
-
-            # angle = calc_angle(x_location - mid_point)
-            drive(angle, speed_default)
+            drive(pid, speed_default)
 
         else:
             pid = round(pidcal.pid_control(int(x_location_old), curve_detector.curve_count, mid_point), 6)
-            angle = pid
-
-            # angle = calc_angle(x_location_old - mid_point)
-            drive(angle, speed_default)
+            drive(pid, speed_default)
 
 
         curve_detector.update(pid)
@@ -512,10 +497,9 @@ def test():
         # cv2.imshow("origin", cv_image)
         # cv2.imshow("processImage", tempImg)
 
-        print(angle, x_location - mid_point)
+        print(pid, x_location - mid_point)
 
-    out.release()
-    out2.release()
+    # out.release()
 
 
 if __name__ == "__main__":
