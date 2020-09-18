@@ -68,8 +68,8 @@ class StopDetector:
 
         grads = []
 	
-	if np.all(rightlines) == None:
-	    return 0, 0
+        if np.all(rightlines) == None:
+            return 0, 0
 
         for line in rightlines:
             for x1, y1, x2, y2 in line:
