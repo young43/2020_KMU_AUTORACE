@@ -30,13 +30,13 @@ class StopDetector:
         cv2.rectangle(out_img, (140, 380), (550, 420), (210, 100, 55), 2)
 
         lower_yellow = (20, 100, 100)
-        upper_yellow = (40, 255, 255)
+        upper_yellow = (50, 255, 255)
 
         img_mask = cv2.inRange(stop_roi, lower_yellow, upper_yellow)
 
-        # cv2.imshow("yellow", out_img)
+        print("yellow", np.count_nonzero(img_mask))
 
-        if np.count_nonzero(img_mask) > 60 and self.check_time():
+        if np.count_nonzero(img_mask) > 50 and self.check_time():
             self.on_detected_stopline()
             return True
 
@@ -56,9 +56,8 @@ class StopDetector:
     def check_crocss_walk(self, warp_img, img):
         out_img = np.copy(warp_img)
 
-
         # stop_roi = cv2.cvtColor(out_img[380:420, 140:550], cv2.COLOR_BGR2HSV)
-        stop_roi = out_img[390:420, 140:550]
+        stop_roi = out_img[410:440, 140:550]
         cv2.rectangle(out_img, (140, 380), (550, 420), (210, 100, 55), 2)
 
         # low_threshold = np.array([0, 0, 120], dtype=np.uint8)
@@ -71,7 +70,7 @@ class StopDetector:
         print("cross:", np.count_nonzero(stop_roi))
 
         # 정지선 nonzero 값 프린트 해서 조정
-        if np.count_nonzero(stop_roi) > 1800 and not self.check_yellow_line(img) and self.check_time2():
+        if np.count_nonzero(stop_roi) > 2000 and not self.check_yellow_line(img) and self.check_time2():
             self.on_detected_crosswallk()
             return True
 

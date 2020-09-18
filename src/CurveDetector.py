@@ -24,10 +24,12 @@ class Curve:
 
     def count_curve(self):
         if self.check_time():
-            if abs(sum(self.pid_list)) > 2:
+            if abs(sum(self.pid_list)) > 3:
                 self.time_old = time.time()
                 self.curve_count += 1
                 print("Curve Detect!!!", self.curve_count)
+                return True
+        return False
 
 
     def get_cnt(self):

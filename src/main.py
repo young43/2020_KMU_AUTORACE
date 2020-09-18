@@ -19,7 +19,7 @@ def img_process(img):
     cols, rows, ch = img.shape
     brightness = np.sum(img) / (255 * cols * rows)
 
-    minimum_brightness = 0.75
+    minimum_brightness = 0.9
     ratio = brightness / minimum_brightness
     bright_img = cv2.convertScaleAbs(img, alpha = 1 / ratio, beta = 0)
 
@@ -28,15 +28,15 @@ def img_process(img):
     kernel_size = 5
     blur = cv2.GaussianBlur(gray, (kernel_size, kernel_size), 0)
 
-    low_threshold = 60
-    high_threshold = 70
+    low_threshold = 45
+    high_threshold = 55
     edge = cv2.Canny(np.uint8(blur), low_threshold, high_threshold)
 
     roi = roi_interest(edge)
-    # cv2.imshow('roi', roi)
 
+    cv2.imshow("edge", edge)
 
-    return edge
+    return roi
 
 
 def roi_interest(img):
@@ -58,12 +58,12 @@ def roi_interest(img):
     # 이미지와 color로 채워진 ROI를 합침
     roi_image = cv2.bitwise_and(img, mask)
 
-
     return roi_image
 
 
 def warpper_process(img):
-    ret, thres_img = cv2.threshold(img, 50, 255, cv2.THRESH_BINARY)
+
+    ret, thres_img = cv2.threshold(img, 60, 255, cv2.THRESH_BINARY)
 
     kernel = np.ones((3,3), np.uint8)
     dilate = cv2.dilate(thres_img, kernel, 3)
@@ -102,14 +102,14 @@ def main():
     global warper
 
     flag = False
-    cap = cv2.VideoCapture("../video/org2.avi")
+    cap = cv2.VideoCapture("../capture/origin18654.avi")
 
     x_location_old = None
 
     while True:
 
         # 이미지를 캡쳐
-        ret, img = cap.read()
+        ret, cv_image = cap.read()
 
         # 캡쳐되지 않은 경우 처리
         if not ret:
@@ -118,19 +118,14 @@ def main():
             break
 
         if warper == None:
-            warper = Warper(img)
+            warper = Warper(cv_image)
 
         # warper, slidewindow 실행
-        process_img = img_process(img)
+        process_img = img_process(cv_image)
         warp_img = warper.warp(process_img)
         process_img2 = warpper_process(warp_img)
 
-        # slidewindow.w_slidewindow2(process_img2)
-        # slideImage, x_location = slidewindow.slidewindow(process_img2, MODE="PARKING")
-        # mid_point = slidewindow.get_midpoint(MODE="PARKING")
-
         slideImage, x_location = slidewindow.slidewindow(process_img2)
-        mid_point = slidewindow.get_midpoint()
 
         # print(x_location, mid_point)
 
@@ -141,26 +136,29 @@ def main():
             else:
                 x_location_old = x_location
 
-            pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count, mid_point), 6)
-            angle = np.rad2deg(pid)
-
-            # print(pid, degree)
+            pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count), 6)
 
         else:
-            pid = round(pidcal.pid_control(int(x_location_old), curve_detector.curve_count, mid_point), 6)
-            angle = np.rad2deg(pid)
-
+            x_location = x_location_old
+            pid = round(pidcal.pid_control(int(x_location_old), curve_detector.curve_count), 6)
 
         curve_detector.update(pid)
-        curve_detector.count_curve()
+        if curve_detector.count_curve():
+            curve_time = time.time()
 
-        print(angle, x_location - mid_point)
+        # cv2.imshow("warper", warp_img)
+        cv2.imshow("origin", cv_image)
+        # cv2.imshow("processImage", tempImg)
 
-        # cv2.imshow("originImage", img)
-        # cv2.imshow("warper", warper.warp(img))
+        print(round(pid, 2), x_location)
+        cv2.putText(slideImage, 'PID %f' % pid, (0, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+        cv2.putText(slideImage, 'x_location %d' % x_location, (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255),
+                    2)
+        cv2.putText(slideImage, 'curve_cnt %d' % curve_detector.curve_count, (0, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                    (255, 255, 255),
+                    2)
+        # cv2.line(slideImage, (x_location, 380), (318, 479), (0, 255, 255), 3)
         cv2.imshow("slidewindow", slideImage)
-        # cv2.imshow("unwarp", warper.unwarp(slideImage))
-        #cv2.imshow("processImg", img1)
 
 
 if __name__ == '__main__':
