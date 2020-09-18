@@ -12,7 +12,7 @@ from slidewindow import SlideWindow
 from warper import Warper
 from pidcal import PidCal
 from CurveDetector import Curve
-
+from StopDetector import StopDetector
 
 
 def img_process(img):
@@ -34,7 +34,7 @@ def img_process(img):
 
     roi = roi_interest(edge)
 
-    cv2.imshow("edge", edge)
+    # cv2.imshow("edge", edge)
 
     return roi
 
@@ -98,6 +98,8 @@ slidewindow  = SlideWindow()
 pidcal = PidCal()
 curve_detector = Curve()
 warper = None
+stop_detector = StopDetector()
+
 def main():
     global warper
 
@@ -127,6 +129,9 @@ def main():
 
         slideImage, x_location = slidewindow.slidewindow(process_img2)
 
+        stop_detector.check_crocss_walk(warp_img)
+        stop_detector.check_yellow_line(warp_img)
+
         # print(x_location, mid_point)
 
         if x_location != None:
@@ -147,10 +152,10 @@ def main():
             curve_time = time.time()
 
         # cv2.imshow("warper", warp_img)
-        cv2.imshow("origin", cv_image)
+        # cv2.imshow("origin", cv_image)
         # cv2.imshow("processImage", tempImg)
 
-        print(round(pid, 2), x_location)
+        # print(round(pid, 2), x_location)
         cv2.putText(slideImage, 'PID %f' % pid, (0, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
         cv2.putText(slideImage, 'x_location %d' % x_location, (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255),
                     2)

@@ -3,8 +3,6 @@
 
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.pyplot import *
 
 from warper import Warper
 
@@ -277,22 +275,30 @@ class SlideWindow:
         if lefty != [] and leftx != [] and len(leftx) > len(rightx):
             left_fit = np.polyfit(lefty, leftx, 2)
             lx_current = np.int(np.polyval(left_fit, 400))
-            x_location = lx_current + int(self.lane_width_hold * 0.45)
+            x_location = lx_current + int(self.lane_width_hold * 0.5)
 
-            p_mid = np.polyfit(lefty, leftx+(self.lane_width_hold*0.5), 2)
-            for y in y_lst:
-                x = np.polyval(left_fit, y)
-                cv2.circle(out_img, (int(x), int(y)), 3, (255,0,0), -1)
+            minx = np.int(np.polyval(left_fit, win_y_high))
+            maxx = np.int(np.polyval(left_fit, 479))
+
+            if maxx-minx != 0:
+                slope = (479-win_y_high) / (maxx-minx)
+
+                if -7 < slope < 0:
+                    x_location = lx_current + int(self.lane_width_hold * 0.57)
 
         elif righty != [] and rightx != [] and len(rightx) > 300:
             right_fit = np.polyfit(righty, rightx, 2)
             rx_current = np.int(np.polyval(right_fit, 400))
             x_location = rx_current - int(self.lane_width_hold * 0.45)
 
-            p_mid = np.polyfit(righty, rightx-(self.lane_width_hold*0.5), 2)
-            for y in y_lst:
-                x = np.polyval(right_fit, y)
-                cv2.circle(out_img, (int(x), int(y)), 3, (255,0,0), -1)
+            minx = np.int(np.polyval(right_fit, win_y_high))
+            maxx = np.int(np.polyval(right_fit, 479))
+
+            if maxx - minx != 0:
+                slope = (479 - win_y_high) / (maxx - minx)
+
+                if 0 < slope < 7:
+                    x_location = rx_current - int(self.lane_width_hold * 0.57)
 
         else:
             print("no lines")
@@ -305,8 +311,9 @@ class SlideWindow:
 
 
         # print(lx_current, rightx_current)
+
         
-        # cv2.line(out_img, (x_location, 400), (330, height - 1), (0, 255, 255), 3)
+        cv2.line(out_img, (x_location, 400), (330, height - 1), (0, 255, 255), 3)
         cv2.circle(out_img, (330, height - 1), 3, (0, 255, 255), -1)
 
         return out_img, x_location

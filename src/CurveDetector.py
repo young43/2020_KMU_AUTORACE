@@ -5,7 +5,6 @@ import numpy as np
 import time
 
 class Curve:
-
     def __init__(self):
         self.time_old = 0
         self.curve_count = 0

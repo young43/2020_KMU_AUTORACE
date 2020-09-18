@@ -155,7 +155,7 @@ def calc_speed(MODE, curve_detector, is_curve=False):
     speed = 10
 
     if is_curve:
-        speed = 6
+        speed = 7
 
 
     return speed
@@ -385,7 +385,7 @@ def main():
         cv2.putText(slideImage, 'PID %f' % pid, (0, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
         cv2.putText(slideImage, 'x_location %d' % x_location, (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255),
                     2)
-        cv2.putText(slideImage, 'curve_cnt %d' % curve_detector.curve_count, (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+        cv2.putText(slideImage, 'curve_cnt %d' % curve_detector.curve_count, (0, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
                     (255, 255, 255),
                     2)
         # cv2.line(slideImage, (x_location, 380), (318, 479), (0, 255, 255), 3)
@@ -476,7 +476,7 @@ def test():
             is_curve = False
 
         # 횡단보도
-        if stop_detector.check_crocss_walk(warp_img, cv_image):
+        if stop_detector.check_crocss_walk(warp_img):
             MODE = 0
             drive(0, 0)
             rospy.sleep(5)
@@ -486,10 +486,10 @@ def test():
 
         if x_location != None:
             # test 4 lines
-            if curve_detector.curve_count == 3 and np.abs(x_location - x_location_old) > 40:
-                x_location = x_location_old
-            else:
-                x_location_old = x_location
+            # if curve_detector.curve_count == 3 and np.abs(x_location - x_location_old) > 40:
+            #     x_location = x_location_old
+            # else:
+            #     x_location_old = x_location
 
             pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count), 6)
             drive(pid, speed_default)
@@ -518,12 +518,12 @@ def test():
         #cv2.line(slideImage, (x_location, 380), (318, 479), (0, 255, 255), 3)
         cv2.imshow("slidewindow", slideImage)
 
-        out.write(slideImage)
-        out2.write(re_image)
+        # out.write(slideImage)
+        # out2.write(re_image)
 
 
-    out.release()
-    out2.release()
+    # out.release()
+    # out2.release()
 
 
 

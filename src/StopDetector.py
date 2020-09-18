@@ -5,6 +5,8 @@ import cv2
 import numpy as np
 import time
 
+from warper import Warper
+
 class StopDetector:
     def __init__(self):
         self.cnt = 0
@@ -24,20 +26,11 @@ class StopDetector:
         return True
 
     def check_yellow_line(self, img):
-        out_img = np.copy(img)
+        nonzero, grad = self.check_many_lines(img)
 
-        stop_roi = cv2.cvtColor(img[380:420, 140:550], cv2.COLOR_BGR2HSV)
-        cv2.rectangle(out_img, (140, 380), (550, 420), (210, 100, 55), 2)
-
-        lower_yellow = (20, 100, 100)
-        upper_yellow = (50, 255, 255)
-
-        img_mask = cv2.inRange(stop_roi, lower_yellow, upper_yellow)
-
-        print("yellow", np.count_nonzero(img_mask))
-
-        if np.count_nonzero(img_mask) > 50 and self.check_time():
+        if 1300 > nonzero > 800 and 50 > grad > 30 and self.check_time():
             self.on_detected_stopline()
+            self.previous_time = time.time()
             return True
 
         return False
@@ -53,25 +46,45 @@ class StopDetector:
         self.previous_time2 = time.time()
 
 
-    def check_crocss_walk(self, warp_img, img):
-        out_img = np.copy(warp_img)
 
-        # stop_roi = cv2.cvtColor(out_img[380:420, 140:550], cv2.COLOR_BGR2HSV)
-        stop_roi = out_img[410:440, 140:550]
-        cv2.rectangle(out_img, (140, 380), (550, 420), (210, 100, 55), 2)
+    def check_many_lines(self, img):
+        out_img = np.copy(img)
 
-        # low_threshold = np.array([0, 0, 120], dtype=np.uint8)
-        # high_threshold = np.array([255, 255, 255], dtype=np.uint8)
-        #
-        # mask = cv2.inRange(stop_roi, low_threshold, high_threshold)
-        #
-        # cv2.imshow("mask", mask)
+        # stop_roi = cv2.cvtColor(out_img[390:420, 140:550], cv2.COLOR_BGR2HSV)
+        stop_roi = out_img[390:420, 140:550]
+        # check_roi = cv2.cvtColor(stop_roi, cv2.COLOR_BGR2HSV)
+        check_roi = np.dstack((stop_roi, stop_roi, stop_roi))
+        cv2.rectangle(check_roi, (140, 390), (550, 420), (210, 100, 55), 2)
 
-        print("cross:", np.count_nonzero(stop_roi))
+        rho = 1
+        theta = np.pi / 180
+        threshold = 10
+        minLineLength = 5
+        maxLineGap = 5
+        rightlines = cv2.HoughLinesP(stop_roi, rho, theta, threshold, minLineLength, maxLineGap)
 
-        # 정지선 nonzero 값 프린트 해서 조정
-        if np.count_nonzero(stop_roi) > 2000 and not self.check_yellow_line(img) and self.check_time2():
+        color = [255, 0, 0]
+        thickness = 2
+
+        grads = []
+
+        for line in rightlines:
+            for x1, y1, x2, y2 in line:
+                if ((x2 - x1) != 0):
+                    gradiant = (y2 - y1) / (x2 - x1)
+                    grads.append(gradiant)
+                    cv2.line(check_roi, (x1, y1), (x2, y2), color, thickness)
+
+        # print(len(grads))
+
+        return np.count_nonzero(stop_roi), len(grads)
+
+    def check_crocss_walk(self, warp_img):
+        nonzero, grad = self.check_many_lines(warp_img)
+
+        if nonzero > 1700 and grad > 60 and self.check_time ():
             self.on_detected_crosswallk()
+            self.previous_time = time.time()
             return True
 
         return False
@@ -79,15 +92,20 @@ class StopDetector:
 
 if __name__ == '__main__':
     stop_counter = StopDetector()
+    warper = None
 
-    cap = cv2.VideoCapture('../video/org2.avi')
+    cap = cv2.VideoCapture('../capture/origin18654.avi')
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
 
+        if warper == None:
+            warper = Warper(frame)
+
         #  stop_counter.check_yellow_line(frame)
-        stop_counter.check_crocss_walk(frame)
+        warp_img = warper.warp(frame)
+        stop_counter.check_crocss_walk(frame, warp_img)
 
 
         # cv2.imshow('frame', detect_img)
