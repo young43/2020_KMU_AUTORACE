@@ -15,7 +15,6 @@ from CurveDetector import Curve
 
 
 
-
 def img_process(img):
     cols, rows, ch = img.shape
     brightness = np.sum(img) / (255 * cols * rows)
@@ -34,8 +33,10 @@ def img_process(img):
     edge = cv2.Canny(np.uint8(blur), low_threshold, high_threshold)
 
     roi = roi_interest(edge)
+    # cv2.imshow('roi', roi)
 
-    return roi
+
+    return edge
 
 
 def roi_interest(img):
@@ -57,11 +58,11 @@ def roi_interest(img):
     # 이미지와 color로 채워진 ROI를 합침
     roi_image = cv2.bitwise_and(img, mask)
 
+
     return roi_image
 
 
 def warpper_process(img):
-
     ret, thres_img = cv2.threshold(img, 50, 255, cv2.THRESH_BINARY)
 
     kernel = np.ones((3,3), np.uint8)
@@ -72,8 +73,26 @@ def warpper_process(img):
     sharp_img = cv2.filter2D(dilate, -1, sharp)
 
 
-    return sharp_img
+    return thres_img
 
+
+def hough_line(img):
+    outimg = np.zeros_like(img)
+    outimg = cv2.cvtColor(outimg, cv2.COLOR_GRAY2BGR)
+
+
+    minLineLength = 10
+    maxLineGap = 50
+    lines = cv2.HoughLinesP(img, 1, np.pi / 180, 5, minLineLength, maxLineGap)
+    for x in range(0, len(lines)):
+        for x1, y1, x2, y2 in lines[x]:
+            cv2.line(outimg,(x1,y1),(x2,y2),(0,255,0),10, cv2.LINE_AA)
+            pts = np.array([[x1, y1], [x2, y2]], np.int32)
+            cv2.polylines(outimg, [pts], True, (0, 255, 0))
+
+
+
+    return outimg
 
 slidewindow  = SlideWindow()
 pidcal = PidCal()

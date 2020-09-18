@@ -11,7 +11,8 @@ class Warper:
 
         height = image.shape[0]
         width = image.shape[1]
-
+	
+	'''
         src = np.float32([
             [0, 320],  # 좌상
             [0, 410],  # 좌하
@@ -24,6 +25,23 @@ class Warper:
             [width + 150, 0],
             [width - 170, height],
         ])
+	'''
+	
+	src = np.float32([
+	    [100, 320],  # 좌상
+	    [0, 410],  # 좌하
+	    [width-100, 320],  # 우상
+	    [width, 410],  # 우하
+	])
+
+	dst = np.float32([
+	    [0, 0],
+	    [200, height],
+	    [width-80, 0],
+	    [width-180, height],
+	])
+
+ 	
 
         self.M = cv2.getPerspectiveTransform(src, dst)
         self.Minv = cv2.getPerspectiveTransform(dst, src)

@@ -11,7 +11,7 @@ from datetime import datetime
 import roslib
 import sys
 import rospy
-
+ 
 from rospy import ROSException
 import sensor_msgs.msg
 import actionlib
@@ -108,6 +108,8 @@ def img_process(img):
 
     roi = roi_interest(edge)
 
+    # cv2.imshow("edge", edge)
+
     return roi
 
 
@@ -145,12 +147,12 @@ def warpper_process(img):
     sharp_img = cv2.filter2D(dilate, -1, sharp)
 
 
-    return sharp_img
+    return thres_img
 
 
 
 def calc_speed(MODE, curve_detector):
-    speed = 7
+    speed = 6
 
     if MODE == 1 or MODE == 2 or MODE == 3 or curve_detector.curve_count >= 3:
         speed = 4
@@ -217,14 +219,16 @@ def main():
         if warper == None:
             warper = Warper(cv_image)
 
-        process_img = img_process(cv_image)
+
+	re_image = cv2.resize(cv_image, dsize=(640, 480), interpolation=cv2.INTER_AREA)
+        process_img = img_process(re_image)
         warp_img = warper.warp(process_img)
         process_img2 = warpper_process(warp_img)
 
         # tempImg = img_gray_process(cv_image)
 
         slideImage, x_location = slidewindow.slidewindow(process_img2)
-        mid_point = slidewindow.get_midpoint(MODE)
+        # mid_point = slidewindow.get_midpoint(MODE)
 
         # curve 2번 돌고나서 obstacle
         POS, circle, distance = obstacle_detector.check(obstacles)
@@ -359,13 +363,13 @@ def main():
             else:
                 x_location_old = x_location
 
-            pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count, mid_point), 6)
+            pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count), 6)
             angle = pid
 
             drive(angle, speed_default)
 
         else:
-            pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count, mid_point), 6)
+            pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count), 6)
             angle = pid
 
             drive(angle, speed_default)
@@ -387,7 +391,7 @@ def main():
 
         # print(angle, x_location - mid_point)
 
-        out.write(cv_image)
+        out.write(re_image)
 
     out.release()
 
@@ -402,22 +406,17 @@ def test():
 
     rospy.init_node("racecar")
     motor_pub = rospy.Publisher("xycar_motor", xycar_motor, queue_size=1)
-    # motor_sub = rospy.Subscriber("xycar_motor", xycar_motor, motor_callback)
     img_sub = rospy.Subscriber("/usb_cam/image_raw", Image, img_callback)
-    obstacle_sub = rospy.Subscriber("/obstacles", Obstacles, obstacle_callback, queue_size=1)
+    # obstacle_sub = rospy.Subscriber("/obstacles", Obstacles, obstacle_callback, queue_size=1)
     # armarker_sub = rospy.Subscriber("/ar_pose_marker", AlvarMarkers, get_marker)
 
-    if cv_image:
-        h, w = cv_image.shape[:2]
-    else:
-        h, w = 480, 640
+    h, w = 480, 640
 
-    out = cv2.VideoWriter(
-        "/home/nvidia/xycar_ws/src/racecar/video/origin{}{}{}.avi".format(now.day, now.hour, now.minute),
-        cv2.VideoWriter_fourcc("M", "J", "P", "G"), 30, (w, h))
+    out = cv2.VideoWriter('/home/nvidia/xycar_ws/src/racecar/video/slide{}{}{}.avi'.format(now.day, now.hour, now.minute),cv2.VideoWriter_fourcc("M", "J", "P", "G"), 30 ,(w, h))
+
 
     out2 = cv2.VideoWriter(
-        "/home/nvidia/xycar_ws/src/racecar/video/slide{}{}{}.avi".format(now.day, now.hour, now.minute),
+        "/home/nvidia/xycar_ws/src/racecar/video/origin{}{}{}.avi".format(now.day, now.hour, now.minute),
         cv2.VideoWriter_fourcc("M", "J", "P", "G"), 30, (w, h))
 
     print("------------- auto_race start!!! -------------")
@@ -449,20 +448,15 @@ def test():
         if warper == None:
             warper = Warper(cv_image)
 
-        process_img = img_process(cv_image)
+	re_image = cv2.resize(cv_image, dsize=(640, 480), interpolation=cv2.INTER_AREA)
+        process_img = img_process(re_image)
         warp_img = warper.warp(process_img)
-        process_img2 = warpper_process(warp_img)
+        process_img2 = warpper_process(warp_img) 
 
         slideImage, x_location = slidewindow.slidewindow(process_img2)
-        mid_point = slidewindow.get_midpoint()
-
-        # if np.all(cv_image):
-        #     out.write(cv_image)
-        # if np.all(slideImage):
-        #     out2.write(slideImage)
 
         # curve 2번 돌고나서 obstacle
-        POS, circle, distance = obstacle_detector.check(obstacles)
+        # POS, circle, distance = obstacle_detector.check(obstacles)
 
         # 시작점 체크
         if stop_detector.check_yellow_line(cv_image):
@@ -480,11 +474,12 @@ def test():
             else:
                 x_location_old = x_location
 
-            pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count, mid_point), 6)
+            pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count), 6)
             drive(pid, speed_default)
 
         else:
-            pid = round(pidcal.pid_control(int(x_location_old), curve_detector.curve_count, mid_point), 6)
+	    x_location = x_location_old
+            pid = round(pidcal.pid_control(int(x_location_old), curve_detector.curve_count), 6)
             drive(pid, speed_default)
 
 
@@ -492,17 +487,33 @@ def test():
         curve_detector.count_curve()
 
 
-        cv2.imshow("slidewindow", slideImage)
         # cv2.imshow("warper", warp_img)
         # cv2.imshow("origin", cv_image)
         # cv2.imshow("processImage", tempImg)
 
-        print(pid, x_location - mid_point)
+        print(round(pid, 2), x_location)
+        cv2.putText(slideImage, 'PID %f' % pid, (0, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+        cv2.putText(slideImage, 'x_location %d' % x_location, (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+        
+
+	cv2.line(slideImage, (x_location, 380), (318, 479), (0, 255, 255), 3)
+        cv2.imshow("slidewindow", slideImage)
+	
+	'''
+	if slideImage.shape[:2] == [480, 640]:
+        	out.write(slideImage)
+        
+	if re_image.shape[:2] == [480, 640]:	
+		out2.write(re_image)
+	'''
 
     # out.release()
+    # out2.release()
+
 
 
 if __name__ == "__main__":
     # main()
     test()
+
 

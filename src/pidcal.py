@@ -52,8 +52,8 @@ class PidCal:
         self.setpoint = setpoint
         err = abs(self.setpoint - x_current)
 
-        if curve_count < 2 and err < 50:
-            self.p[0] = 0.0020
+        if curve_count < 2 and err < 30:
+            self.p[0] = 0.0030
             self.p[1] = 0.000005
             self.p[2] = 0.005
             # p = [0.0020, 0.000005, 0.005]
@@ -62,7 +62,7 @@ class PidCal:
             # self.dp[2] = self.p[2]/10
             # dp = [p[0]/10, p[1]/10, p[2]/10] # to twiddle kp, ki, kd
         else:
-            self.p[0] = 0.0035
+            self.p[0] = 0.0042
             self.p[1] = 0.000005
             self.p[2] = 0.005
             # p = [0.0020, 0.000005, 0.005]
