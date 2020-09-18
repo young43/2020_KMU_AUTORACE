@@ -49,7 +49,7 @@ slidewindow = SlideWindow()
 pidcal = PidCal()
 
 OBSTACLE_NUM = 3
-
+obs_cnt = 0
 
 def img_callback(data):
     global cv_image
@@ -152,10 +152,10 @@ def warpper_process(img):
 
 
 def calc_speed(MODE, curve_detector, is_curve=False):
-    speed = 10
+    speed = 9
 
-    if is_curve:
-        speed = 7
+    if is_curve or MODE == 2:
+        speed = 6
 
 
     return speed
@@ -171,6 +171,104 @@ def parking(obstacles):
         time.sleep(0.5)
 
 
+def avoidance(pattern, circle, POS):
+    global obs_cnt
+
+    
+    reverse_angle = []
+    # print("mid_pose:", mid_pose)
+
+    # LEFT
+    if (pattern == ["LEFT", "RIGHT", "LEFT"] and (obs_cnt==0 or obs_cnt==2)) or (pattern == ["RIGHT", "LEFT", "RIGHT"] and (obs_cnt==1)):
+	    pose = Pose()
+	    cur_pose = pose.get_curpose()
+	    mid_pose = pose.get_midpoint(circle, MODE="LEFT")
+	    goal_pose = pose.get_goalpoint(circle)
+		
+	    if POS == 2:
+		print("obstacle reverse detect!")
+		circle.x, circle.y = -0.4, -0.8
+		
+	        mid_pose = pose.get_midpoint(circle, MODE="LEFT")
+	    	goal_pose = pose.get_goalpoint(circle)
+
+	    print(circle)
+	    while cur_pose[1] > mid_pose[1]:
+		y = abs(cur_pose[1] - mid_pose[1])
+		x = abs(mid_pose[0] - cur_pose[0]) * 2
+		angle = min(np.arctan2(y, x) * 180 / np.pi, 50)
+		reverse_angle.append(angle)
+
+		drive(angle, 6)
+		time.sleep(0.05)
+
+		cur_pose = pose.calc_ahead(angle, 7.5)
+		print("Left({}) : {}".format(angle, cur_pose))
+
+	    while len(reverse_angle) > 0 and cur_pose[1] > goal_pose[1]:
+		y = abs(cur_pose[1] - goal_pose[1])
+		x = abs(goal_pose[0] - cur_pose[0])
+		angle = -reverse_angle.pop(0)
+
+		drive(angle, 6)
+		time.sleep(0.08)
+
+		cur_pose = pose.calc_ahead(angle, 7.5)
+		print("Left({}) : {}".format(angle, cur_pose))
+
+
+	    for t in range(0, 4):
+	        drive(-(30 - (t * 10)), 3)
+	        time.sleep(0.13)
+
+	    drive(0, 0)
+	    rospy.sleep(0.05)
+
+
+    elif (pattern == ["LEFT", "RIGHT", "LEFT"] and (obs_cnt==1)) or (pattern == ["RIGHT", "LEFT", "RIGHT"] and (obs_cnt==0 or obs_cnt==2)):
+	    pose = Pose()
+	    cur_pose = pose.get_curpose()
+	    mid_pose = pose.get_midpoint(circle, MODE="RIGHT")
+	    goal_pose = pose.get_goalpoint(circle)
+
+	    if POS == 1:
+		print("obstacle reverse detect!")
+		circle.x, circle.y = 0.4, -0.8
+	        mid_pose = pose.get_midpoint(circle, MODE="RIGHT")
+	    	goal_pose = pose.get_goalpoint(circle)
+
+	    print(circle)
+	    while cur_pose[1] > mid_pose[1]:
+            	y = abs(cur_pose[1] - mid_pose[1])
+            	x = abs(mid_pose[0] - cur_pose[0]) * 2
+            	angle = max(-np.arctan2(y, x) * 180 / np.pi, -50)
+
+            	reverse_angle.append(angle)
+
+            	drive(angle, 6)
+            	time.sleep(0.05)
+
+            	cur_pose = pose.calc_ahead(angle, 7.5)
+            	print("Right({}) : {}".format(angle, cur_pose))
+
+            while len(reverse_angle) > 0 and cur_pose[1] > goal_pose[1]:
+            	y = abs(cur_pose[1] - goal_pose[1])
+            	x = abs(goal_pose[0] - cur_pose[0])
+            	angle = -reverse_angle.pop(0)
+
+           	drive(angle, 6)
+            	time.sleep(0.08)
+
+            	cur_pose = pose.calc_ahead(angle, 7.5)
+            	print("Right({}) : {}".format(angle, cur_pose))
+
+
+	    for t in range(0, 4):
+    	        drive((30 - (t * 10)), 3)
+    	        time.sleep(0.1)
+
+	    drive(0, 0)
+	    rospy.sleep(0.05)
 
 
 def main():
@@ -178,6 +276,7 @@ def main():
     global cv_image
     global obstacles
     global MODE
+    global obs_cnt
 
     rospy.init_node("racecar")
     motor_pub = rospy.Publisher("xycar_motor", xycar_motor, queue_size=1)
@@ -208,14 +307,14 @@ def main():
 
 
     speed_default = 10
-    speed_obstacle = 7.5
+    speed_obstacle = 5
 
-    MODE = 0
+    MODE = 2
     start_time = time.time()
     curve_time = time.time()
     is_curve = False
 
-    obs_cnt = 0
+    first_detect = None
 
     x_location = None
     x_location_old = None
@@ -238,18 +337,18 @@ def main():
         POS, circle, distance = obstacle_detector.check(obstacles)
 
         # 시작점 체크
-        if stop_detector.check_yellow_line(cv_image):
+        if stop_detector.check_yellow_line(warp_img):
             MODE = 0
             obs_cnt = 0
             curve_detector.curve_count = 0
 
-        if time.time() - curve_time < 3 and time.time() - start_time > 10:
+        if time.time() - curve_time < 2 or curve_detector.is_curve():
             is_curve = True
         else:
             is_curve = False
 
         # 횡단보도
-        if stop_detector.check_crocss_walk(warp_img, cv_image):
+        if stop_detector.check_crocss_walk(warp_img):
             MODE = 0
             drive(0, 0)
             rospy.sleep(5)
@@ -257,96 +356,15 @@ def main():
 
         # curve 2번 돌고나서 obstacle
         if MODE == 2:
-            if POS.value == 1:  # Left
-                print("Obstacle Detect Left")
+	    if first_detect == None:
+		if POS.value == 1:
+		    first_detect = ["LEFT", "RIGHT", "LEFT"]
+		elif POS.value == 2:
+		    first_detect = ["RIGHT", "LEFT", "RIGHT"]
 
-                pose.clear()
-                cur_pose = pose.get_curpose()
-                mid_pose = pose.get_midpoint(circle, MODE="LEFT")
-                goal_pose = pose.get_goalpoint(circle)
-
-                reverse_angle = []
-
-                print("mid_pose:", mid_pose)
-
-                while cur_pose[1] > mid_pose[1]:
-                    y = abs(cur_pose[1] - mid_pose[1])
-                    x = abs(mid_pose[0] - cur_pose[0]) * 2
-                    angle = min(np.arctan2(y, x) * 180 / np.pi, 50)
-                    reverse_angle.append(angle)
-
-                    drive(angle, speed_obstacle)
-                    time.sleep(0.05)
-
-                    cur_pose = pose.calc_ahead(angle, speed_obstacle)
-                    print("Left({}) : {}".format(angle, cur_pose))
-
-                while len(reverse_angle) > 0 and cur_pose[1] > goal_pose[1]:
-                    y = abs(cur_pose[1] - goal_pose[1])
-                    x = abs(goal_pose[0] - cur_pose[0])
-                    angle = -reverse_angle.pop(0)
-
-                    drive(angle, speed_obstacle)
-                    time.sleep(0.08)
-
-                    cur_pose = pose.calc_ahead(angle, speed_obstacle)
-                    print("Left({}) : {}".format(angle, cur_pose))
-
-
-                for t in range(0, 4):
-                    drive(-(30 - (t * 10)), 3)
-                    time.sleep(0.1)
-
-                drive(0, 0)
-                rospy.sleep(0.05)
-
-                obs_cnt += 1
-
-            elif POS.value == 2:
-                print("Obstacle Detect Right")
-
-                pose.clear()
-                cur_pose = pose.get_curpose()
-                mid_pose = pose.get_midpoint(circle, MODE="Right")
-                goal_pose = pose.get_goalpoint(circle)
-                reverse_angle = []
-
-                print("mid_pose:", mid_pose)
-
-                while cur_pose[1] > mid_pose[1]:
-                    y = abs(cur_pose[1] - mid_pose[1])
-                    x = abs(mid_pose[0] - cur_pose[0]) * 2
-                    angle = max(-np.arctan2(y, x) * 180 / np.pi, -50)
-
-                    reverse_angle.append(angle)
-
-                    drive(angle, speed_obstacle)
-                    time.sleep(0.05)
-
-                    cur_pose = pose.calc_ahead(angle, speed_obstacle)
-                    print("Right({}) : {}".format(angle, cur_pose))
-
-                while len(reverse_angle) > 0 and cur_pose[1] > goal_pose[1]:
-                    y = abs(cur_pose[1] - goal_pose[1])
-                    x = abs(goal_pose[0] - cur_pose[0])
-                    angle = -reverse_angle.pop(0)
-
-                    drive(angle, speed_obstacle)
-                    time.sleep(0.08)
-
-                    cur_pose = pose.calc_ahead(angle, speed_obstacle)
-                    print("Right({}) : {}".format(angle, cur_pose))
-
-
-                for t in range(0, 4):
-                    drive((30 - (t * 10)), 3)
-                    time.sleep(0.1)
-
-                drive(0, 0)
-                rospy.sleep(0.05)
-
-                obs_cnt += 1
-
+	    if POS.value != 0:
+	    	avoidance(first_detect, circle, POS.value)
+		obs_cnt += 1
 
         if obs_cnt == OBSTACLE_NUM:
             MODE = 0
@@ -355,6 +373,7 @@ def main():
             drive(0, 0)
             rospy.sleep(0.1)
             print("obstacle detect finish")
+	    break
 
         speed_default = calc_speed(MODE, curve_detector, is_curve)
 
@@ -381,7 +400,7 @@ def main():
         # cv2.imshow("origin", re_image)
         # cv2.imshow("processImage", tempImg)
 
-        print(round(pid, 2), x_location)
+        # print(round(pid, 2), x_location)
         cv2.putText(slideImage, 'PID %f' % pid, (0, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
         cv2.putText(slideImage, 'x_location %d' % x_location, (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255),
                     2)
@@ -391,11 +410,17 @@ def main():
         # cv2.line(slideImage, (x_location, 380), (318, 479), (0, 255, 255), 3)
         cv2.imshow("slidewindow", slideImage)
 
-        out.write(slideImage)
-        out2.write(cv_image)
+	if MODE == 0 and obs_cnt < OBSTACLE_NUM:
+	    MODE = 1
+	elif MODE == 1 and curve_detector.curve_count == 2:
+	    MODE = 2
 
-    out.release()
-    out2.release()
+
+        # out.write(slideImage)
+        # out2.write(cv_image)
+
+    # out.release()
+    # out2.release()
 
 
 
@@ -414,11 +439,11 @@ def test():
 
     h, w = 480, 640
 
-    out = cv2.VideoWriter('/home/nvidia/xycar_ws/src/racecar/video/slide{}{}{}.avi'.format(now.day, now.hour, now.minute),cv2.VideoWriter_fourcc("M", "J", "P", "G"), 30 ,(w, h))
+    out = cv2.VideoWriter('/home/nvidia/xycar_ws/src/racecar/video/test_slide{}{}{}.avi'.format(now.day, now.hour, now.minute),cv2.VideoWriter_fourcc("M", "J", "P", "G"), 30 ,(w, h))
 
 
     out2 = cv2.VideoWriter(
-        "/home/nvidia/xycar_ws/src/racecar/video/origin{}{}{}.avi".format(now.day, now.hour, now.minute),
+        "/home/nvidia/xycar_ws/src/racecar/video/test_origin{}{}{}.avi".format(now.day, now.hour, now.minute),
         cv2.VideoWriter_fourcc("M", "J", "P", "G"), 30, (w, h))
 
     print("------------- auto_race start!!! -------------")
@@ -464,13 +489,19 @@ def test():
         # POS, circle, distance = obstacle_detector.check(obstacles)
 
         # 시작점 체크
-        if stop_detector.check_yellow_line(cv_image):
+        if stop_detector.check_yellow_line(warp_img):
             MODE = 0
             obs_cnt = 0
             curve_detector.curve_count = 0
+	    start_time = time.time()
 
-
+	'''
         if time.time() - curve_time < 2 and time.time()-start_time > 10:
+            is_curve = True
+        else:
+            is_curve = False
+	'''
+        if time.time() - curve_time < 2 or curve_detector.is_curve():
             is_curve = True
         else:
             is_curve = False
@@ -518,18 +549,19 @@ def test():
         #cv2.line(slideImage, (x_location, 380), (318, 479), (0, 255, 255), 3)
         cv2.imshow("slidewindow", slideImage)
 
-        # out.write(slideImage)
-        # out2.write(re_image)
+        out.write(slideImage)
+        out2.write(re_image)
 
 
-    # out.release()
-    # out2.release()
+    out.release()
+    out2.release()
 
 
 
 if __name__ == "__main__":
     main()
     # test()
+
 
 
 

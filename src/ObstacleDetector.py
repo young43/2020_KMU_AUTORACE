@@ -24,12 +24,11 @@ class ObstacleDetector:
 
             distance = math.sqrt(math.pow(p.x, 2) + math.pow(p.y, 2))
 
-
-            if -0.6 < p.y < 0:
+            if -0.55 < p.y < 0:
                 d = distance
                 center = p
                 if abs(p.x) < 0.4:
-                    if p.x >= 0:
+                    if p.x >= 0.1:
                         self.mode = Position.RIGHT
                     else:
                         self.mode = Position.LEFT

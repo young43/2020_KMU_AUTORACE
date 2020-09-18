@@ -67,6 +67,9 @@ class StopDetector:
         thickness = 2
 
         grads = []
+	
+	if np.all(rightlines) == None:
+	    return 0, 0
 
         for line in rightlines:
             for x1, y1, x2, y2 in line:
@@ -111,3 +114,4 @@ if __name__ == '__main__':
         # cv2.imshow('frame', detect_img)
         if cv2.waitKey(0) == 27:
             break
+
