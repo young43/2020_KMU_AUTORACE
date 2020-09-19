@@ -28,9 +28,9 @@ class ObstacleDetector:
                 d = distance
                 center = p
                 if abs(p.x) < 0.4:
-                    if p.x >= 0.1:
+                    if p.x > 0.115:
                         self.mode = Position.RIGHT
-                    else:
+                    elif p.x < 0.115:
                         self.mode = Position.LEFT
                     self.cnt += 1
                     break

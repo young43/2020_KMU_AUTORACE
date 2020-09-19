@@ -33,6 +33,7 @@ from slidewindow import SlideWindow
 from warper import Warper
 from CurveDetector import Curve
 from StopDetector import StopDetector
+from parking import Parking
 
 bridge = CvBridge()
 cv_image = None
@@ -47,6 +48,7 @@ now = datetime.now()
 warper = None
 slidewindow = SlideWindow()
 pidcal = PidCal()
+
 
 OBSTACLE_NUM = 3
 obs_cnt = 0
@@ -157,10 +159,12 @@ def warpper_process(img):
 
 
 def calc_speed(MODE, curve_detector):
-    speed = 9
+    speed = 10
 
-    if MODE == 2 or curve_detector >= 4:
+    if MODE == 2:
         speed = 6
+    elif MODE == 3:
+        speed = 5
 
 
     return speed
@@ -308,8 +312,10 @@ def main():
     obstacle_detector = ObstacleDetector()
     curve_detector = Curve()
     stop_detector = StopDetector()
+    parker = Parking()
 
     obs_time = 0
+    start_time = 0
 
     speed_default = 10
     speed_obstacle = 5
@@ -318,6 +324,8 @@ def main():
 
     x_location = None
     x_location_old = None
+
+    stop_cnt = 0
 
     while not rospy.is_shutdown():
         global warper
@@ -341,7 +349,8 @@ def main():
             MODE = 0
             obs_cnt = 0
             curve_detector.curve_count = 0
-
+            stop_cnt += 1
+            start_time = time.time()
 
         # 횡단보도
         if stop_detector.check_crocss_walk(warp_img):
@@ -369,6 +378,29 @@ def main():
             drive(0, 0)
             rospy.sleep(0.1)
             print("obstacle detect finish")
+
+
+        # parking
+        if MODE == 3:
+            if time.time()-start_time() > 10 and parker.check_wall(obstacles):
+                add_time = parker.calc_add_time(5)
+                for t in range(add_time):
+                    drive(0, 5)
+                    time.sleep(1)
+
+                pose = Pose()
+                cur_pose = pose.get_curpose()
+                mid_pose, goal_pose = parker.calc_drive_pose()
+
+                while cur_pose[1] < mid_pose[1]:
+                    drive(0.34, -5)
+                    time.sleep(0.1)
+                    cur_pose = pose.calc_ahead(20, -5)
+
+                while cur_pose[1] < goal_pose[1]:
+                    drive(-0.34, -5)
+                    time.sleep(0.1)
+                    cur_pose = pose.calc_ahead(-20, -5)
 
 
         speed_default = calc_speed(MODE, curve_detector)
@@ -408,10 +440,12 @@ def main():
         # cv2.line(slideImage, (x_location, 380), (318, 479), (0, 255, 255), 3)
         cv2.imshow("slidewindow", slideImage)
 
-        if MODE == 0 and obs_cnt < OBSTACLE_NUM:
-            MODE = 1
-        elif MODE == 1 and curve_detector.curve_count == 2:
-            MODE = 2
+        if MODE == 0 and curve_detector.curve_count == 2:
+            MODE = 1    # cross_walk
+        elif MODE == 1 and obs_cnt < OBSTACLE_NUM:
+            MODE = 2    # obstacle
+        elif MODE == 0 and stop_cnt == 3:
+            MODE = 3    # parking
 
 
         # out.write(slideImage)
