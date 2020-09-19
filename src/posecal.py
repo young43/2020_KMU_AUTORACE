@@ -23,6 +23,19 @@ class Pose:
 
         return self.pose
 
+    def calc_behind(self, angle, speed):
+        if angle > 0:
+            dt_x = -((speed) * math.sin(angle * np.pi / 180) * 0.01)
+            dt_y = ((speed) * math.cos(angle * np.pi / 180) * 0.01)
+        else:
+            dt_x = ((speed) * math.sin(angle * np.pi / 180) * 0.01)
+            dt_y = ((speed) * math.cos(angle * np.pi / 180) * 0.01)
+
+        self.pose[0] += dt_x
+        self.pose[1] -= dt_y
+
+        return self.pose
+
     def get_curpose(self):
         return self.pose
 

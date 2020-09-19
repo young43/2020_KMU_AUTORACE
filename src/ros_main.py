@@ -383,9 +383,9 @@ def main():
         # parking
         if MODE == 3:
             if time.time()-start_time() > 10 and parker.check_wall(obstacles):
-                add_time = parker.calc_add_time(5)
+                add_time = math.ceil(parker.calc_add_time(2))
                 for t in range(add_time):
-                    drive(0, 5)
+                    drive(0, 2)
                     time.sleep(1)
 
                 pose = Pose()
@@ -393,14 +393,14 @@ def main():
                 mid_pose, goal_pose = parker.calc_drive_pose()
 
                 while cur_pose[1] < mid_pose[1]:
-                    drive(0.34, -5)
+                    drive(0.34, -2)
                     time.sleep(0.1)
-                    cur_pose = pose.calc_ahead(20, -5)
+                    cur_pose = pose.calc_behind(20, -2)
 
                 while cur_pose[1] < goal_pose[1]:
-                    drive(-0.34, -5)
+                    drive(-0.34, -2)
                     time.sleep(0.1)
-                    cur_pose = pose.calc_ahead(-20, -5)
+                    cur_pose = pose.calc_behind(-20, -2)
 
 
         speed_default = calc_speed(MODE, curve_detector)
