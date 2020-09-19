@@ -30,7 +30,7 @@ class ObstacleDetector:
                 if abs(p.x) < 0.4:
                     if p.x > 0.115:
                         self.mode = Position.RIGHT
-                    elif p.x < 0.115:
+                    elif p.x < -0.115:
                         self.mode = Position.LEFT
                     self.cnt += 1
                     break
