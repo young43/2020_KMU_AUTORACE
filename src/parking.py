@@ -9,23 +9,50 @@ from posecal import Pose
 class Parking:
     def __init__(self):
         self.car_width = 0.4
-        self.parking_space = 1    # 실제보다 안전거리만큼 값을 더 주기
-        self.obs_dis = 0.6      # temp
+        self.parking_space = 1.2    # 실제보다 안전거리만큼 값을 더 주기
+        self.obs_dis = 0.0      # temp
 
     def check_wall(self, obstacles):
+        if obstacles == None:
+            return False
+
         for circle in obstacles.circles:
             p = circle.center
 
-            if -0.3 < p.y <= 0:
-                if 0.125 < p.x < 0.65:
-                    self.obs_dis = p.x
+            if -0.2 < p.y < 0.1:
+                if 0.2 < p.x < 0.7:
+                    self.obs_dis = p.x - 0.1
+                    if p.x > 0.7:
+                        self.obs_dis -= 0.15
+                    elif p.x > 0.6:
+                        self.obs_dis -= 0.12
+                    elif p.x > 0.5:
+                        self.obs_dis -= 0.1
+                    print("obstacle:", p.x, p.y, self.obs_dis)
                     return True
 
         return False
 
+
+    def check_final_wall(self, obstacles):
+        if obstacles == None:
+            return None
+
+        for circle in obstacles.circles:
+            p = circle.center
+            if -1 < p.y < -0.1 and abs(p.x) < 1.5:
+                return abs(p.y)
+
+        return None
+
     def calc_add_distance(self):
-        # res = math.pow((self.obs_dis + self.car_width), 2) / self.parking_space
-        res = (self.obs_dis + self.car_width) / ((self.obs_dis + self.car_width)/(self.parking_space))
+        # res = math.pow((self.obs_dis + self.car_width), 2) / (self.parking_space)
+        # res = (self.obs_dis + self.car_width/1.8) / ((self.car_width+0.4+self.obs_dis)/self.parking_space)
+        obs_dis = self.obs_dis #- 0.05
+        res = math.pow((obs_dis + self.car_width), 2) / (self.parking_space)
+        # res = (obs_dis + self.car_width) / ((self.car_width//2 + 0.5 + obs_dis) / self.parking_space) - 0.5
+
+        # res = (self.parking_space+0.6) - (0.4 + self.obs_dis)/np.tan(40 * np.pi / 180)
         return res
 
     def calc_add_time(self, speed):
@@ -34,7 +61,7 @@ class Parking:
         return time
 
     def calc_drive_pose(self):
-        all_path_y = (self.parking_space + self.calc_add_distance())
+        all_path_y = (self.parking_space-0.35 + self.calc_add_distance())
         all_path_x = self.car_width + self.obs_dis
         mid_pose = [all_path_x/2, all_path_y/2]
         goal_pose = [all_path_x, all_path_y]
@@ -48,6 +75,9 @@ if __name__ == "__main__":
     from xycar_motor.msg import xycar_motor
 
     from posecal import Pose
+
+    obstacles = None
+    motor_pub = None
 
     def obstacle_callback(data):
         global obstacles
@@ -71,29 +101,68 @@ if __name__ == "__main__":
 
     parker = Parking()
 
-    print("------ parking mode on ------")
-    if parker.check_wall(obstacles):
-        add_time = parker.calc_add_time(2)
-        for t in range(add_time):
-            drive(0, 2)
-            time.sleep(1)
 
-        pose = Pose()
-        cur_pose = pose.get_curpose()
-        mid_pose, goal_pose = parker.calc_drive_pose()
+    while not rospy.is_shutdown():
+        drive(0, 2.5)
+        time.sleep(0.1)
 
-        print("start parking forward!!!")
-        while cur_pose[1] < mid_pose[1]:
-            drive(0.35, -2)
+        if parker.check_wall(obstacles):
+            print("------ parking mode on ------")
+            drive(0, 0)
+            time.sleep(0.5)
+            add_time = int(math.ceil(parker.calc_add_time(2)))
+            # print("obs_distance:", parker.obs_dis)
+            print("add_distance:", -parker.calc_add_distance(), add_time)
+
+            pose = Pose()
+            cur_pose = pose.get_curpose()
+            add_pose = [0, -parker.calc_add_distance()]
+
+            while cur_pose[1] > add_pose[1]:
+                drive(0, 2.5)
+                time.sleep(0.1)
+                cur_pose = pose.calc_ahead(0, 2.5)
+
+
+            pose = Pose()
+            cur_pose = pose.get_curpose()
+            mid_pose, goal_pose = parker.calc_drive_pose()
+
+            print("parking: steer RIGHT!!!")
+            print("mid:", mid_pose)
+            cnt = 0
+            drive(0, 0)
             time.sleep(0.1)
-            cur_pose = pose.calc_behind(20, -2)
+            while cur_pose[1] < mid_pose[1]:
+                drive(1, -2.5)
+                time.sleep(0.1)
+                cur_pose = pose.calc_behind(20, -2.5)
+                print("cur_pose:", cur_pose)
+                cnt += 1
 
-        print("start parking backward!!!")
-        while cur_pose[1] < goal_pose[1]:
-            drive(-0.35, -2)
+
+            print("parking: steer LEFT!!")
+            print("goal:", goal_pose)
+            for t in range(cnt):
+                drive(-1, -2.5)
+                time.sleep(0.1)
+                cur_pose = pose.calc_behind(-20, -2.5)
+                print("cur_pose:", cur_pose)
+
+            for theta in range(450, 540, 10):
+                st = 0.24 * np.sin(theta * np.pi / 180)
+                drive(st, 2.5)
+                time.sleep(0.0001)
+
+            drive(0, 0)
             time.sleep(0.1)
-            cur_pose = pose.calc_behind(-20, -2)
 
+            print("Straight")
+            for t in range(6):
+                drive(0, 2)
+                time.sleep(0.03)
+
+            break
 
 
     # test log
