@@ -162,9 +162,11 @@ def calc_speed(MODE, curve_detector):
     speed = 10
 
     if MODE == 1 or MODE == 2:  # 미션 구간(장애물, 횡단보도)
-        speed = 6.5
+        speed = 6
     elif MODE == 3:     # 주차
-        speed = 5
+        speed = 4
+    elif curve_detector.curve_count >= 3:
+        speed = 6.5
 
 
     return speed
@@ -199,8 +201,6 @@ def avoidance(pattern, circle, POS):
             mid_pose = pose.get_midpoint(circle, MODE="LEFT")
             goal_pose = pose.get_goalpoint(circle)
 
-        print(circle)
-
         while cur_pose[1] > mid_pose[1]:
             y = abs(cur_pose[1] - mid_pose[1])
             x = abs(mid_pose[0] - cur_pose[0]) * 2
@@ -224,7 +224,6 @@ def avoidance(pattern, circle, POS):
             cur_pose = pose.calc_ahead(angle, 7.5)
             print("Left({}) : {}".format(angle, cur_pose))
 
-
         for t in range(0, 4):
             drive(-(30 - (t * 10)), 3)
             time.sleep(0.13)
@@ -244,8 +243,6 @@ def avoidance(pattern, circle, POS):
             circle.x, circle.y = 0.4, -0.8
             mid_pose = pose.get_midpoint(circle, MODE="RIGHT")
             goal_pose = pose.get_goalpoint(circle)
-
-        print(circle)
 
         while cur_pose[1] > mid_pose[1]:
             y = abs(cur_pose[1] - mid_pose[1])
@@ -273,8 +270,8 @@ def avoidance(pattern, circle, POS):
 
 
         for t in range(0, 4):
-                drive((30 - (t * 10)), 3)
-                time.sleep(0.1)
+            drive((30 - (t * 10)), 3)
+            time.sleep(0.1)
 
         drive(0, 0)
         rospy.sleep(0.05)
@@ -385,45 +382,78 @@ def main():
 
         # parking
         if MODE == 3:
-            if time.time()-start_time() > 10 and parker.check_wall(obstacles):
-                add_time = math.ceil(parker.calc_add_time(2))
-                for t in range(add_time):
-                    drive(0, 2)
-                    time.sleep(1)
+            if time.time()-start_time > 10 and parker.check_wall(obstacles):
+                print("------ parking mode on ------")
+                drive(0, 0)
+                time.sleep(0.5)
+                add_time = int(math.ceil(parker.calc_add_time(2)))
+                # print("obs_distance:", parker.obs_dis)
+                # print("add_distance:", -parker.calc_add_distance(), add_time)
+
+                pose = Pose()
+                cur_pose = pose.get_curpose()
+                add_pose = [0, -parker.calc_add_distance()]
+
+                while cur_pose[1] > add_pose[1]:
+                    drive(0, 2.5)
+                    time.sleep(0.1)
+                    cur_pose = pose.calc_ahead(0, 2.5)
 
                 pose = Pose()
                 cur_pose = pose.get_curpose()
                 mid_pose, goal_pose = parker.calc_drive_pose()
 
+                print("parking: steer RIGHT!!!")
+                cnt = 0
+                drive(0, 0)
+                time.sleep(0.1)
                 while cur_pose[1] < mid_pose[1]:
-                    drive(0.34, -2)
+                    drive(1, -2.5)
                     time.sleep(0.1)
-                    cur_pose = pose.calc_behind(20, -2)
+                    cur_pose = pose.calc_behind(20, -2.5)
+                    print("cur_pose:", cur_pose)
+                    cnt += 1
 
-                while cur_pose[1] < goal_pose[1]:
-                    drive(-0.34, -2)
+                print("parking: steer LEFT!!")
+                for t in range(cnt):
+                    drive(-1, -2.5)
                     time.sleep(0.1)
-                    cur_pose = pose.calc_behind(-20, -2)
+                    cur_pose = pose.calc_behind(-20, -2.5)
+                    print("cur_pose:", cur_pose)
+
+                for theta in range(450, 540, 10):
+                    st = 0.24 * np.sin(theta * np.pi / 180)
+                    drive(st, 2.5)
+                    time.sleep(0.0001)
+
+                drive(0, 0)
+                time.sleep(0.1)
+
+                print("Straight")
+                for t in range(6):
+                    drive(0, 2)
+                    time.sleep(0.03)
+
+                break   # finish
+
 
 
         speed_default = calc_speed(MODE, curve_detector)
 
         if x_location != None:
-            if curve_detector.curve_count == 3 and np.abs(x_location - x_location_old) > 40:
-                x_location = x_location_old
-            else:
+            if np.abs(x_location - x_location_old) < 70:
                 x_location_old = x_location
 
             pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count), 6)
             if abs(pid) > 0.3:
-                speed_default = 6
+                speed_default = 6.5
             drive(pid, speed_default)
 
         else:
             x_location = x_location_old
             pid = round(pidcal.pid_control(int(x_location_old), curve_detector.curve_count), 6)
             if abs(pid) > 0.3:
-                speed_default = 6
+                speed_default = 6.5
             drive(pid, speed_default)
 
         curve_detector.update(pid)
