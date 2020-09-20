@@ -32,7 +32,7 @@ class Curve:
 
     def is_curve(self):
         if self.check_time():
-            if abs(sum(self.pid_list)) > 1.7:
+            if abs(sum(self.pid_list)) > 2:
                 print("Curve Detect!!!", self.curve_count)
                 return True
         return False
