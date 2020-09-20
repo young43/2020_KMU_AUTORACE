@@ -1,0 +1,13 @@
+<launch>
+
+  <!-- motor node -->
+  <include file="$(find xycar_motor)/launch/xycar_motor_a2.launch" />
+
+  <!-- lidar -->
+  <include file="$(find obstacle_detector)/launch/example.launch" />
+
+  <!-- parking -->
+  <node name="parking" pkg="racecar" type="parking.py" output="screen"/>
+
+</launch>
+
