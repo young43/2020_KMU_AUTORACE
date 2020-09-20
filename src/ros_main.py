@@ -161,9 +161,9 @@ def warpper_process(img):
 def calc_speed(MODE, curve_detector):
     speed = 10
 
-    if MODE == 2:
-        speed = 6
-    elif MODE == 3:
+    if MODE == 1 or MODE == 2:  # 미션 구간(장애물, 횡단보도)
+        speed = 6.5
+    elif MODE == 3:     # 주차
         speed = 5
 
 
@@ -346,6 +346,7 @@ def main():
 
         # 시작점 체크
         if stop_detector.check_yellow_line(warp_img):
+            print("-------- Start Point --------")
             MODE = 0
             obs_cnt = 0
             curve_detector.curve_count = 0
@@ -353,10 +354,12 @@ def main():
             start_time = time.time()
 
         # 횡단보도
-        if stop_detector.check_crocss_walk(warp_img):
+        if MODE == 1 and stop_detector.check_crocss_walk(warp_img):
+            print("-------- CrossWalk Point --------")
             MODE = 0
             drive(0, 0)
             rospy.sleep(5)
+            curve_detector.curve_count += 1 # 인위적으로 늘려줌
 
         # curve 2번 돌고나서 obstacle
         if MODE == 2:
