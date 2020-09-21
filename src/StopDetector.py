@@ -16,19 +16,19 @@ class StopDetector:
         self.upper_yellow = (40, 255, 255)
 
     def check_time(self):
-        if time.time() < self.previous_time + 10:
+        if time.time() < self.previous_time + 5:
             return False
         return True
 
     def check_time2(self):
-        if time.time() < self.previous_time2 + 10:
+        if time.time() < self.previous_time2 + 5:
             return False
         return True
 
     def check_yellow_line(self, img):
-        nonzero, grad = self.check_many_lines(img)
+        nonzero = self.check_many_lines(img)
 
-        if 1300 > nonzero > 800 and 50 > grad > 30 and self.check_time():
+        if 1700 < nonzero:
             self.on_detected_stopline()
             self.previous_time = time.time()
             return True
@@ -36,13 +36,13 @@ class StopDetector:
         return False
 
     def on_detected_stopline(self):
-        print('STOP LINE DETECTED!!!')
+        # print('STOP LINE DETECTED!!!')
         self.previous_time = time.time()
         self.cnt += 1
 
 
     def on_detected_crosswallk(self):
-        print('CROSS WALK DETECTED!!!')
+        # print('CROSS WALK DETECTED!!!')
         self.previous_time2 = time.time()
 
 
@@ -51,7 +51,7 @@ class StopDetector:
         out_img = np.copy(img)
 
         # stop_roi = cv2.cvtColor(out_img[390:420, 140:550], cv2.COLOR_BGR2HSV)
-        stop_roi = out_img[390:420, 140:550]
+        stop_roi = out_img[370:410, 140:550]
         # check_roi = cv2.cvtColor(stop_roi, cv2.COLOR_BGR2HSV)
         check_roi = np.dstack((stop_roi, stop_roi, stop_roi))
         cv2.rectangle(check_roi, (140, 390), (550, 420), (210, 100, 55), 2)
@@ -68,24 +68,24 @@ class StopDetector:
 
         grads = []
 	
-        if np.all(rightlines) == None:
-            return 0, 0
-
-        for line in rightlines:
-            for x1, y1, x2, y2 in line:
-                if ((x2 - x1) != 0):
-                    gradiant = (y2 - y1) / (x2 - x1)
-                    grads.append(gradiant)
-                    cv2.line(check_roi, (x1, y1), (x2, y2), color, thickness)
+        # if np.all(rightlines) == None:
+        #     return 0, 0
+        #
+        # for line in rightlines:
+        #     for x1, y1, x2, y2 in line:
+        #         if ((x2 - x1) != 0):
+        #             gradiant = (y2 - y1) / (x2 - x1)
+        #             grads.append(gradiant)
+        #             cv2.line(check_roi, (x1, y1), (x2, y2), color, thickness)
 
         # print(len(grads))
 
-        return np.count_nonzero(stop_roi), len(grads)
+        return np.count_nonzero(stop_roi)
 
     def check_crocss_walk(self, warp_img):
-        nonzero, grad = self.check_many_lines(warp_img)
+        nonzero = self.check_many_lines(warp_img)
 
-        if nonzero > 1700 and grad > 60 and self.check_time ():
+        if nonzero > 1350 and self.check_time ():
             self.on_detected_crosswallk()
             self.previous_time = time.time()
             return True

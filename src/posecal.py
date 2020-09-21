@@ -7,8 +7,8 @@ import cv2
 
 class Pose:
 
-    def __init__(self):
-        self.pose = [0.0, 0.0]
+    def __init__(self, x=0, y=0):
+        self.pose = [x, y]
 
     def clear(self):
         self.pose = [0.0, 0.0]
@@ -42,9 +42,9 @@ class Pose:
 
     def get_midpoint(self, circle, MODE="LEFT"):
         if MODE == "LEFT":
-            mid_pose = [circle.x + 0.2, circle.y-0.05]
+            mid_pose = [circle.x + 0.25, circle.y]
         else:
-            mid_pose = [circle.x - 0.2, circle.y-0.05]
+            mid_pose = [circle.x - 0.25, circle.y]
         return mid_pose
 
     def get_goalpoint(self, circle, MODE="LEFT"):

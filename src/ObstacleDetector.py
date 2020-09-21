@@ -24,13 +24,13 @@ class ObstacleDetector:
 
             distance = math.sqrt(math.pow(p.x, 2) + math.pow(p.y, 2))
 
-            if -0.55 < p.y < 0:
+            if -0.6 < p.y < -0.1:
                 d = distance
                 center = p
-                if abs(p.x) < 0.4:
-                    if p.x > 0.115:
+                if abs(p.x) < 0.35:
+                    if p.x > 0.08:
                         self.mode = Position.RIGHT
-                    elif p.x < -0.115:
+                    elif p.x < -0.08:
                         self.mode = Position.LEFT
                     self.cnt += 1
                     break
@@ -68,3 +68,4 @@ obstacles = None
 def obstacle_callback(data):
     global obstacles
     obstacles = data
+

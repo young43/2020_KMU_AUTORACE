@@ -76,6 +76,59 @@ def warpper_process(img):
     return thres_img
 
 
+def avoidance(pattern, circle, POS):
+    global obs_cnt
+
+    angle_lst = sorted(np.linspace(0, 20, 20), reverse=True)
+
+    if POS.value == 1:  # LEFT
+        # 우회전 / 좌회전 / 우회전 / 좌회전
+        for theta in angle_lst:
+            rad = np.deg2rad(theta)
+            # drive(rad, 6)
+            time.sleep(0.15)
+
+        for theta in angle_lst:
+            rad = -np.deg2rad(theta)
+            # drive(rad, 6)
+            time.sleep(0.15)
+
+        for theta in angle_lst:
+            rad = np.deg2rad(theta)
+            # drive(rad, 6)
+            time.sleep(0.15)
+
+        for theta in angle_lst:
+            rad = -np.deg2rad(theta)
+            # drive(rad, 6)
+            time.sleep(0.15)
+
+    else:  # RIGHT
+
+        # 좌회전 /  우회전 / 좌회전 / 우회전
+        for theta in angle_lst:
+            rad = -np.deg2rad(theta)
+            # drive(rad, 6)
+            time.sleep(0.15)
+
+        for theta in angle_lst:
+            rad = np.deg2rad(theta)
+            # drive(rad, 6)
+            time.sleep(0.15)
+
+        for theta in angle_lst:
+            rad = -np.deg2rad(theta)
+            # drive(rad, 6)
+            time.sleep(0.15)
+
+        for theta in angle_lst:
+            rad = np.deg2rad(theta)
+            # drive(rad, 6)
+            time.sleep(0.15)
+
+
+
+
 def hough_line(img):
     outimg = np.zeros_like(img)
     outimg = cv2.cvtColor(outimg, cv2.COLOR_GRAY2BGR)
@@ -107,6 +160,8 @@ def main():
     cap = cv2.VideoCapture("../capture/origin18654.avi")
 
     x_location_old = None
+
+    start_time = time.time()
 
     while True:
 
@@ -148,8 +203,7 @@ def main():
             pid = round(pidcal.pid_control(int(x_location_old), curve_detector.curve_count), 6)
 
         curve_detector.update(pid)
-        if curve_detector.count_curve():
-            curve_time = time.time()
+        curve_detector.count_curve(start_time)
 
         # cv2.imshow("warper", warp_img)
         # cv2.imshow("origin", cv_image)
@@ -164,6 +218,9 @@ def main():
                     2)
         # cv2.line(slideImage, (x_location, 380), (318, 479), (0, 255, 255), 3)
         cv2.imshow("slidewindow", slideImage)
+
+        # angle_lst = sorted(np.linspace(0, 19, 20), reverse=True)
+        # print(angle_lst)
 
 
 if __name__ == '__main__':

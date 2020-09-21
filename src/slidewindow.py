@@ -280,7 +280,7 @@ class SlideWindow:
             minx = np.int(np.polyval(left_fit, win_y_high))
             maxx = np.int(np.polyval(left_fit, 479))
 
-	    cv2.line(out_img, (minx, 400), (maxx, height - 1), (255, 0, 0), 3)
+        # cv2.line(out_img, (minx, 400), (maxx, height - 1), (255, 0, 0), 3)
 
             if maxx-minx != 0:
                 slope = (479-win_y_high) / (maxx-minx)
@@ -296,7 +296,7 @@ class SlideWindow:
             minx = np.int(np.polyval(right_fit, win_y_high))
             maxx = np.int(np.polyval(right_fit, 479))
 	
-	    cv2.line(out_img, (minx, 400), (maxx, height - 1), (255, 0, 0), 3)
+            # cv2.line(out_img, (minx, 400), (maxx, height - 1), (255, 0, 0), 3)
 
             if maxx - minx != 0:
                 slope = (479 - win_y_high) / (maxx - minx)
