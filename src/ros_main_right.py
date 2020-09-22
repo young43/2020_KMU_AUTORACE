@@ -380,14 +380,14 @@ def main():
 
             pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count), 6)
             if abs(pid) > 0.28 and MODE == 0:
-                speed_default = 10.5
+                speed_default -= 0.5
             drive(pid, speed_default)
 
         else:
             x_location = x_location_old
             pid = round(pidcal.pid_control(int(x_location_old), curve_detector.curve_count), 6)
             if abs(pid) > 0.28 and MODE == 0:
-                speed_default = 10.5
+                speed_default -= 0.5
             drive(pid, speed_default)
 
         curve_detector.update(pid)
@@ -564,14 +564,14 @@ def test():
                     x_location = x_location_old
 
             pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count), 6)
-            if abs(pid) > 0.28 and (MODE != 2 or MODE != 3):
+            if abs(pid) > 0.28 and MODE == 0:
                 speed_default -= 0.5
             drive(pid, speed_default)
 
         else:
             x_location = x_location_old
             pid = round(pidcal.pid_control(int(x_location_old), curve_detector.curve_count), 6)
-            if abs(pid) > 0.28 and (MODE != 2 or MODE != 3):
+            if abs(pid) > 0.28 and MODE == 0:
                 speed_default -= 0.5
             drive(pid, speed_default)
 

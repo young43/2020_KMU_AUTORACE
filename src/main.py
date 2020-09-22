@@ -163,8 +163,6 @@ def main():
             warper = Warper(cv_image)
 
 
-
-
         # warper, slidewindow 실행
         process_img = img_process(cv_image)
         hough_img = hough_line(process_img)
