@@ -178,22 +178,35 @@ if __name__ == "__main__":
 
 
         while True:
-            if distance == None and yaw_data == None:
-                # drive(0, 0)
-                # time.sleep(0.1)
+            if yaw_data == None:
                 continue
 
-            print(yaw_data, distance)
-
-            if distance < 0.29:
+            if 0.01 < yaw_data < 0.02:
                 break
 
             drive(yaw_data*3, 2)
             time.sleep(0.5)
+            drive(-yaw_data * 3, -2)
+            time.sleep(0.5)
 
-            time.sleep(1)
+            time.sleep(1.5)
 
-        break
+        while True:
+            if distance == None:
+                continue
+
+            if 0.25 < distance < 0.27:
+                break
+
+            if distance > 0.27:
+                drive(0, 2)
+                time.sleep(0.5)
+            elif distance < 0.25:
+                drive(0, -2)
+                time.sleep(0.5)
+
+
+            time.sleep(1.5)
 
 
         #
