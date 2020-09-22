@@ -12,7 +12,7 @@ from posecal import Pose
 
 class Parking:
     def __init__(self):
-        self.car_width = 0.4
+        self.car_width = 0.42
         self.parking_space = 1    # 실제보다 안전거리만큼 값을 더 주기
         self.obs_dis = 0.40         # temp
 
@@ -53,7 +53,7 @@ class Parking:
         # res = math.pow((self.obs_dis + self.car_width), 2) / (self.parking_space)
         # res = (self.obs_dis + self.car_width/1.8) / ((self.car_width+0.4+self.obs_dis)/self.parking_space)
         obs_dis = self.obs_dis #- 0.05
-        res = math.pow((obs_dis + self.car_width), 2) / (self.parking_space)
+        res = math.pow((obs_dis + self.car_width), 2) / (self.parking_space-0.1)
         # res = (obs_dis + self.car_width) / ((self.car_width//2 + 0.5 + obs_dis) / self.parking_space) - 0.5
 
         # res = (self.parking_space+0.6) - (0.4 + self.obs_dis)/np.tan(40 * np.pi / 180)
@@ -116,9 +116,7 @@ if __name__ == "__main__":
                     ori_lst = [orientation.x, orientation.y, orientation.z, orientation.w]
                     position = tag.pose.pose.position
 
-                    ar_data = (orientation, position)
-
-
+                    ar_data = (ori_lst, position)
 
                     # pose = msg.pose.pose.position
                     # distance = np.sqrt(pose.x**2 + pose.y ** 2)
@@ -181,41 +179,71 @@ if __name__ == "__main__":
             print("cur_pose:", cur_pose)
 
 
-        r = rospy.Rate(10)
+        # r = rospy.Rate(10)
+        # print("YAW START")
+        # angle = 0
+        # for i in range(30):
+        #     yaw, distance = get_yaw_data(ar_data)
+        #     drive(0, 0)
+        #     time.sleep(1.5)
+        #     print(yaw, distance)
+        #
+        #     if yaw == None:
+        #         continue
+        #
+        #     if abs(yaw) < 0.002:
+        #         break
+        #
+        #     if distance < 0.25:
+        #         drive(0, -2.5)
+        #         time.sleep(0.5)
+        #         continue
+        #
+        #     if distance > 0.55:
+        #         drive(0, 2.5)
+        #         time.sleep(0.5)
+        #         continue
+        #
+        #     if abs(yaw) < 0.06:
+        #         angle = yaw * 5
+        #     else:
+        #         angle = yaw
+        #
+        #     drive(angle, 3)
+        #     time.sleep(0.7)
+        #
+        #     drive(0, 0)
+        #     time.sleep(1)
+        #
+        #     drive(angle, -3)
+        #     time.sleep(0.7)
 
+
+
+        print("DISTANCE START")
         while True:
+            drive(0, 0)
+            time.sleep(1.5)
+
             yaw, distance = get_yaw_data(ar_data)
-            r.sleep()
-
-            if yaw == None:
-                continue
-
-            if 0.01 < yaw < 0.015:
-                break
-
-            drive(yaw*3, 2)
-            time.sleep(0.5)
-            drive(-yaw * 3, -2)
-            time.sleep(0.5)
-
-
-        while True:
-            yaw, distance = get_yaw_data(ar_data)
-            r.sleep()
+            print(yaw, distance)
 
             if distance == None:
                 continue
 
-            if 0.25 < distance < 0.27:
+            if 0.23 < distance < 0.275:
                 break
 
-            if distance > 0.275:
-                drive(0, 2)
+            if distance > 0.27:
+                drive(yaw*3, 2)
                 time.sleep(0.5)
-            elif distance < 0.245:
-                drive(0, -2)
+            elif distance < 0.24:
+                drive(yaw*3, -2)
                 time.sleep(0.5)
 
+
+
+        break
 
         #
         # print("Straight")

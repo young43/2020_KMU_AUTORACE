@@ -14,12 +14,43 @@ from pidcal import PidCal
 from CurveDetector import Curve
 from StopDetector import StopDetector
 
+fgbg = cv2.createBackgroundSubtractorMOG2(varThreshold=500, history=1)
+# knn = cv2.createBackgroundSubtractorKNN(varThreshold=300, history=30)
+
+def filter(img):
+    # roi_img = roi_interest(img[:,:,:1])
+    if len(img.shape) == 3:
+        img = img[:,:,:1]
+    img = roi_interest(img)
+
+    out_img = np.dstack((img, img, img))
+
+    fgmask = fgbg.apply(img)
+
+    nlabels, label, stats, centroids = cv2.connectedComponentsWithStats(fgmask)
+
+    for index, centroid in enumerate(centroids):
+        if stats[index][0] == 0 and stats[index][1] == 0:
+            continue
+        if np.any(np.isnan(centroid)):
+            continue
+
+        x, y, width, height, area = stats[index]
+        centerX, centerY = int(centroid[0]), int(centroid[1])
+
+        if area > 100:
+            cv2.circle(out_img, (centerX, centerY), 1, (0, 255, 0), 2)
+            cv2.rectangle(out_img, (x, y), (x + width, y + height), (0, 0, 255))
+
+    return fgmask, out_img
+
+
 
 def img_process(img):
     cols, rows, ch = img.shape
     brightness = np.sum(img) / (255 * cols * rows)
 
-    minimum_brightness = 0.9
+    minimum_brightness = 0.5
     ratio = brightness / minimum_brightness
     bright_img = cv2.convertScaleAbs(img, alpha = 1 / ratio, beta = 0)
 
@@ -28,8 +59,8 @@ def img_process(img):
     kernel_size = 5
     blur = cv2.GaussianBlur(gray, (kernel_size, kernel_size), 0)
 
-    low_threshold = 45
-    high_threshold = 55
+    low_threshold = 60
+    high_threshold = 65
     edge = cv2.Canny(np.uint8(blur), low_threshold, high_threshold)
 
     roi = roi_interest(edge)
@@ -76,74 +107,28 @@ def warpper_process(img):
     return thres_img
 
 
-def avoidance(pattern, circle, POS):
-    global obs_cnt
-
-    angle_lst = sorted(np.linspace(0, 20, 20), reverse=True)
-
-    if POS.value == 1:  # LEFT
-        # 우회전 / 좌회전 / 우회전 / 좌회전
-        for theta in angle_lst:
-            rad = np.deg2rad(theta)
-            # drive(rad, 6)
-            time.sleep(0.15)
-
-        for theta in angle_lst:
-            rad = -np.deg2rad(theta)
-            # drive(rad, 6)
-            time.sleep(0.15)
-
-        for theta in angle_lst:
-            rad = np.deg2rad(theta)
-            # drive(rad, 6)
-            time.sleep(0.15)
-
-        for theta in angle_lst:
-            rad = -np.deg2rad(theta)
-            # drive(rad, 6)
-            time.sleep(0.15)
-
-    else:  # RIGHT
-
-        # 좌회전 /  우회전 / 좌회전 / 우회전
-        for theta in angle_lst:
-            rad = -np.deg2rad(theta)
-            # drive(rad, 6)
-            time.sleep(0.15)
-
-        for theta in angle_lst:
-            rad = np.deg2rad(theta)
-            # drive(rad, 6)
-            time.sleep(0.15)
-
-        for theta in angle_lst:
-            rad = -np.deg2rad(theta)
-            # drive(rad, 6)
-            time.sleep(0.15)
-
-        for theta in angle_lst:
-            rad = np.deg2rad(theta)
-            # drive(rad, 6)
-            time.sleep(0.15)
-
-
-
 
 def hough_line(img):
     outimg = np.zeros_like(img)
     outimg = cv2.cvtColor(outimg, cv2.COLOR_GRAY2BGR)
 
 
-    minLineLength = 10
-    maxLineGap = 50
-    lines = cv2.HoughLinesP(img, 1, np.pi / 180, 5, minLineLength, maxLineGap)
-    for x in range(0, len(lines)):
-        for x1, y1, x2, y2 in lines[x]:
-            cv2.line(outimg,(x1,y1),(x2,y2),(0,255,0),10, cv2.LINE_AA)
-            pts = np.array([[x1, y1], [x2, y2]], np.int32)
-            cv2.polylines(outimg, [pts], True, (0, 255, 0))
+    minLineLength = 5
+    maxLineGap = 15
+    l_lines = cv2.HoughLinesP(img[:, :330], 1, np.pi / 180, 30, minLineLength, maxLineGap)
+    r_lines = cv2.HoughLinesP(img[:, 330:], 1, np.pi / 180, 30, minLineLength, maxLineGap)
 
+    l_minx, l_maxx, l_miny, l_maxy = 99999, 0, 99999, 0
+    r_minx, r_maxx, r_miny, r_maxy = 99999, 0, 99999, 0
 
+    if np.all(l_lines) != None:
+        for x in range(0, len(l_lines)):
+            for x1, y1, x2, y2 in l_lines[x]:
+                cv2.line(outimg,(x1,y1),(x2,y2),(0,255,0),10, cv2.LINE_AA)
+                # pts = np.array([[x1, y1], [x2, y2]], np.int32)
+                # cv2.polylines(outimg, [pts], True, (0, 255, 0))
+
+        cv2.line(outimg,(l_minx,l_miny),(l_maxx,l_maxy),(0,255,0),10, cv2.LINE_AA)
 
     return outimg
 
@@ -157,7 +142,7 @@ def main():
     global warper
 
     flag = False
-    cap = cv2.VideoCapture("../capture/origin18654.avi")
+    cap = cv2.VideoCapture("../capture/test_origin171717.avi")
 
     x_location_old = None
 
@@ -177,10 +162,20 @@ def main():
         if warper == None:
             warper = Warper(cv_image)
 
+
+
+
         # warper, slidewindow 실행
         process_img = img_process(cv_image)
+        hough_img = hough_line(process_img)
+
+        not_hough = cv2.bitwise_not(hough_img)
+        new_img = cv2.bitwise_and(not_hough[:,:,1], process_img)
+
+
         warp_img = warper.warp(process_img)
         process_img2 = warpper_process(warp_img)
+
 
         slideImage, x_location = slidewindow.slidewindow(process_img2)
 
@@ -207,7 +202,9 @@ def main():
 
         # cv2.imshow("warper", warp_img)
         # cv2.imshow("origin", cv_image)
-        # cv2.imshow("processImage", tempImg)
+        cv2.imshow("process", process_img)
+        cv2.imshow("hough_img", hough_img)
+        cv2.imshow("new", new_img)
 
         # print(round(pid, 2), x_location)
         cv2.putText(slideImage, 'PID %f' % pid, (0, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
@@ -217,7 +214,7 @@ def main():
                     (255, 255, 255),
                     2)
         # cv2.line(slideImage, (x_location, 380), (318, 479), (0, 255, 255), 3)
-        cv2.imshow("slidewindow", slideImage)
+        # cv2.imshow("slidewindow", slideImage)
 
         # angle_lst = sorted(np.linspace(0, 19, 20), reverse=True)
         # print(angle_lst)

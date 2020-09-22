@@ -19,7 +19,7 @@
   </node>
 
   <!-- auto drive -->
-  <node name="racecar" pkg="racecar" type="ros_main.py" output="screen"/>
+  <node name="racecar" pkg="racecar" type="ros_main_right.py" output="screen"/>
 
 
   <arg name="marker_size" default="5.2" />
