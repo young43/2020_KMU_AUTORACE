@@ -87,8 +87,7 @@ if __name__ == "__main__":
 
     obstacles = None
     motor_pub = None
-    yaw_data = None
-    distance = None
+    ar_data = None
 
     bridge = CvBridge()
     cv_image = None
@@ -109,8 +108,7 @@ if __name__ == "__main__":
 
 
     def get_marker(msg):
-        global yaw_data
-        global distance
+        global ar_data
         if len(msg.markers) != 0:
             for tag in msg.markers:
                 if tag.id == 1:
@@ -118,12 +116,23 @@ if __name__ == "__main__":
                     ori_lst = [orientation.x, orientation.y, orientation.z, orientation.w]
                     position = tag.pose.pose.position
 
-                    roll, pitch, yaw_data = euler_from_quaternion(ori_lst)
-                    distance = np.sqrt(position.x**2 + position.y**2 + position.z**2)
+                    ar_data = (orientation, position)
+
+
 
                     # pose = msg.pose.pose.position
                     # distance = np.sqrt(pose.x**2 + pose.y ** 2)
                     # print(distance)
+
+    def get_yaw_data(data):
+        yaw_data = None
+        distance = None
+
+        if data != None:
+            roll, pitch, yaw_data = euler_from_quaternion(data[0])
+            distance = np.sqrt(data[1].x ** 2 + data[1].y ** 2 + data[1].z ** 2)
+
+        return yaw_data, distance
 
 
     def img_callback(data):
@@ -146,7 +155,6 @@ if __name__ == "__main__":
     drive(0, 0)
     time.sleep(3)
     while not rospy.is_shutdown():
-        print(yaw_data, distance)
         print("------ parking mode on ------")
         pose = Pose()
         cur_pose = pose.get_curpose()
@@ -173,40 +181,40 @@ if __name__ == "__main__":
             print("cur_pose:", cur_pose)
 
 
-        drive(0, 0)
-        time.sleep(0.1)
-
+        r = rospy.Rate(10)
 
         while True:
-            if yaw_data == None:
+            yaw, distance = get_yaw_data(ar_data)
+            r.sleep()
+
+            if yaw == None:
                 continue
 
-            if 0.01 < yaw_data < 0.02:
+            if 0.01 < yaw < 0.015:
                 break
 
-            drive(yaw_data*3, 2)
+            drive(yaw*3, 2)
             time.sleep(0.5)
-            drive(-yaw_data * 3, -2)
+            drive(-yaw * 3, -2)
             time.sleep(0.5)
 
-            time.sleep(1.5)
 
         while True:
+            yaw, distance = get_yaw_data(ar_data)
+            r.sleep()
+
             if distance == None:
                 continue
 
             if 0.25 < distance < 0.27:
                 break
 
-            if distance > 0.27:
+            if distance > 0.275:
                 drive(0, 2)
                 time.sleep(0.5)
-            elif distance < 0.25:
+            elif distance < 0.245:
                 drive(0, -2)
                 time.sleep(0.5)
-
-
-            time.sleep(1.5)
 
 
         #
