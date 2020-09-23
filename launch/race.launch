@@ -4,7 +4,7 @@
   <include file="$(find xycar_motor)/launch/xycar_motor_a2.launch" />
 
   <!-- lidar -->
-  <include file="$(find obstacle_detector)/launch/example.launch" />
+  <include file="$(find obstacle_detector)/launch/obstacles.launch" />
 
   <!-- usb_cam -->
   <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
