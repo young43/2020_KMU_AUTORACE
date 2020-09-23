@@ -286,7 +286,7 @@ def main():
 
         # curve 2번 돌고나서 obstacle
         if MODE == 2:
-            # Part2. 왼오왼
+            # Part1. 왼오왼
             if POS.value == 1:
                 for theta in range(270, 360, 9):
                     st = 0.24 * np.sin(theta * np.pi / 180)
@@ -497,7 +497,7 @@ def test():
         POS, circle, distance = obstacle_detector.check(obstacles)
 
         if MODE == 2:
-            # Part2. 왼오왼
+            # Part1. 왼오왼
             if POS.value == 1:
                 for theta in range(270, 360, 9):
                     st = 0.24 * np.sin(theta * np.pi / 180)

@@ -282,16 +282,10 @@ def main():
 
         # curve 2번 돌고나서 obstacle
         if MODE == 2:
-            # Part2. 왼오왼
-            if POS.value == 1:
-                for theta in range(270, 360, 9):
-                    st = 0.24 * np.sin(theta * np.pi / 180)
-                    drive(-st, 5)
-                    print(-st)
-                    time.sleep(0.06)
-
-                for theta in range(360, 500, 9):
-                    st = 0.24 * np.sin(theta * np.pi / 180)
+            # Part1. 오왼오
+            if POS.value == 1:  # 왼쪽
+                for theta in range(270, 510, 8):
+                    st = 0.23 * np.sin(theta * np.pi / 180)
                     drive(-st, 5)
                     print(-st)
                     time.sleep(0.06)
@@ -300,8 +294,14 @@ def main():
                 drive(0, 0)
                 time.sleep(0.5)
             elif POS.value == 2:  # 오른쪽
-                for theta in range(270, 520, 9):
-                    st = 0.32 * np.sin(theta * np.pi / 180)
+                for theta in range(270, 360, 9):
+                    st = 0.24 * np.sin(theta * np.pi / 180)
+                    drive(st, 5)
+                    print(st)
+                    time.sleep(0.06)
+
+                for theta in range(360, 500, 9):
+                    st = 0.19 * np.sin(theta * np.pi / 180)
                     drive(st, 5)
                     print(st)
                     time.sleep(0.06)
@@ -311,6 +311,13 @@ def main():
                 time.sleep(0.5)
 
         if MODE == 2 and (obs_cnt == OBSTACLE_NUM or (obs_time != 0 and time.time() - obs_time > 12)):
+            # Part1. 오왼오 다시 조정 코드
+            for theta in range(500, 540, 9):
+                st = 0.2 * np.sin(theta * np.pi / 180)
+                drive(st, 5)
+                print(st)
+                time.sleep(0.05)
+
             MODE = 0
             obs_cnt = 4
             drive(0, 0)
@@ -591,7 +598,7 @@ def test():
                     (255, 255, 255), 2)
 
         cv2.line(slideImage, (x_location, 380), (318, 479), (0, 255, 255), 3)
-        # cv2.imshow("slidewindow", slideImage)
+        cv2.imshow("slidewindow", slideImage)
 
         if MODE == 0 and curve_detector.curve_count == 2:
             MODE = 1  # cross_walk
@@ -600,11 +607,11 @@ def test():
         elif MODE == 0 and stop_cnt == 3:
             MODE = 3  # parking
 
-        out.write(slideImage)
-        out2.write(re_image)
+        #out.write(slideImage)
+        #out2.write(re_image)
 
-    out.release()
-    out2.release()
+    #out.release()
+    #out2.release()
 
 
 if __name__ == "__main__":
