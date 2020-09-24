@@ -59,8 +59,8 @@ def img_process(img):
     kernel_size = 5
     blur = cv2.GaussianBlur(gray, (kernel_size, kernel_size), 0)
 
-    low_threshold = 60
-    high_threshold = 65
+    low_threshold = 45
+    high_threshold = 60
     edge = cv2.Canny(np.uint8(blur), low_threshold, high_threshold)
 
     roi = roi_interest(edge)
@@ -141,7 +141,7 @@ def main():
     global warper
 
     flag = False
-    cap = cv2.VideoCapture("../capture/test_origin171717.avi")
+    cap = cv2.VideoCapture("../capture/origin0924.avi")
 
     x_location_old = None
 
@@ -166,30 +166,6 @@ def main():
         process_img = img_process(cv_image)
         warp_img = warper.warp(process_img)
         process_img2 = warpper_process(warp_img)
-
-        out_img = np.dstack((process_img, process_img, process_img))
-        image, contours, hierarchy = cv2.findContours(process_img, 1, 2)
-        for cnt in contours:
-            # x1, y1, x2, y2 = cnt
-            # size = abs(x1-x2) * (y1-y2)
-
-            epsilon1 = 0.01 * cv2.arcLength(cnt, True)
-            epsilon2 = 0.1 * cv2.arcLength(cnt, True)
-
-            approx1 = cv2.approxPolyDP(cnt, epsilon1, True)
-            approx2 = cv2.approxPolyDP(cnt, epsilon2, True)
-
-            size = cv2.contourArea(approx1)
-            size2 = cv2.contourArea(approx2)
-
-            if size > 500:
-                print(size, size2)
-                # cv2.drawContours(out_img, [cnt], 0, (255, 0, 0), 3)  # blue
-                cv2.drawContours(out_img, [approx1], 0, (255, 0, 0), 3)  # blue
-                # cv2.drawContours(out_img, [approx2], 0, (0, 255, 0), 3)  # blue
-
-        cv2.imshow("out_img", out_img)
-
 
 
         slideImage, x_location = slidewindow.slidewindow(process_img2)
@@ -227,7 +203,7 @@ def main():
         cv2.putText(slideImage, 'curve_cnt %d' % curve_detector.curve_count, (0, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
                     (255, 255, 255),
                     2)
-        # cv2.line(slideImage, (x_location, 380), (318, 479), (0, 255, 255), 3)
+        cv2.line(slideImage, (x_location, 380), (320, 479), (0, 255, 255), 3)
         cv2.imshow("slidewindow", slideImage)
 
         # angle_lst = sorted(np.linspace(0, 19, 20), reverse=True)

@@ -16,12 +16,12 @@ class StopDetector:
         self.upper_yellow = (40, 255, 255)
 
     def check_time(self):
-        if time.time() < self.previous_time + 5:
+        if time.time() < self.previous_time + 10:
             return False
         return True
 
     def check_time2(self):
-        if time.time() < self.previous_time2 + 5:
+        if time.time() < self.previous_time2 + 10:
             return False
         return True
 

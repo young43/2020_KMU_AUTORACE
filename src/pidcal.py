@@ -53,7 +53,7 @@ class PidCal:
         err = abs(self.setpoint - x_current)
         # curve_count < 2 and
 
-        if  err < 30:
+        if err < 30:
             self.p[0] = 0.0025
             self.p[1] = 0.000005
             self.p[2] = 0.005

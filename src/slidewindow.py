@@ -272,7 +272,10 @@ class SlideWindow:
 
         y_lst = np.linspace(win_y_high, 479, 10)
         # Fit a second order polynomial to each
-        if lefty != [] and leftx != [] and len(leftx) > len(rightx):
+        # if lefty != [] and leftx != [] and len(leftx) > len(rightx):
+
+        if lefty != [] and leftx != [] and ((len(leftx) > len(rightx)) or (len(leftx) > 300)):
+            print(len(leftx))
             left_fit = np.polyfit(lefty, leftx, 2)
             lx_current = np.int(np.polyval(left_fit, 400))
             x_location = lx_current + int(self.lane_width_hold * 0.5)
@@ -280,7 +283,7 @@ class SlideWindow:
             minx = np.int(np.polyval(left_fit, win_y_high))
             maxx = np.int(np.polyval(left_fit, 479))
 
-        # cv2.line(out_img, (minx, 400), (maxx, height - 1), (255, 0, 0), 3)
+            cv2.line(out_img, (minx, 400), (maxx, height - 1), (255, 0, 0), 3)
 
             if maxx-minx != 0:
                 slope = (479-win_y_high) / (maxx-minx)
@@ -288,15 +291,15 @@ class SlideWindow:
                 if -7 < slope < 0:
                     x_location = lx_current + int(self.lane_width_hold * 0.57)
 
-        elif righty != [] and rightx != [] and len(rightx) > 300:
+        elif righty != [] and rightx != []:     # and len(rightx) > 300
             right_fit = np.polyfit(righty, rightx, 2)
             rx_current = np.int(np.polyval(right_fit, 400))
             x_location = rx_current - int(self.lane_width_hold * 0.5)
 
             minx = np.int(np.polyval(right_fit, win_y_high))
             maxx = np.int(np.polyval(right_fit, 479))
-	
-            # cv2.line(out_img, (minx, 400), (maxx, height - 1), (255, 0, 0), 3)
+
+            cv2.line(out_img, (minx, 400), (maxx, height - 1), (255, 0, 0), 3)
 
             if maxx - minx != 0:
                 slope = (479 - win_y_high) / (maxx - minx)
@@ -316,9 +319,9 @@ class SlideWindow:
 
         # print(lx_current, rightx_current)
 
-        
-        cv2.line(out_img, (x_location, 400), (330, height - 1), (0, 255, 255), 3)
-        cv2.circle(out_img, (330, height - 1), 3, (0, 255, 255), -1)
+
+        # cv2.line(out_img, (x_location, 400), (330, height - 1), (0, 255, 255), 3)
+        # cv2.circle(out_img, (330, height - 1), 3, (0, 255, 255), -1)
 
         return out_img, x_location
 

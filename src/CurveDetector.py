@@ -23,7 +23,7 @@ class Curve:
 
 
     def count_curve(self, start_time):
-        if self.is_curve() and time.time()-start_time > 3:   # 7
+        if self.is_curve() and time.time()-start_time > 7:   # 7
             self.time_old = time.time()
             self.curve_count += 1
             self.pid_list = [0.0 for i in range(20)]
@@ -33,7 +33,7 @@ class Curve:
     def is_curve(self):
         if self.check_time():
             if abs(sum(self.pid_list)) > 2:
-                print("Curve Detect!!!", self.curve_count)
+                print("Curve Detect!!!", self.curve_count+1)
                 return True
         return False
 

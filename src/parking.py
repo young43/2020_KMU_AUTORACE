@@ -14,7 +14,7 @@ class Parking:
     def __init__(self):
         self.car_width = 0.42
         self.parking_space = 1    # 실제보다 안전거리만큼 값을 더 주기
-        self.obs_dis = 0.40         # temp
+        self.obs_dis = 0.41         # temp
 
     def check_wall(self, obstacles):
         if obstacles == None:
@@ -153,30 +153,30 @@ if __name__ == "__main__":
     drive(0, 0)
     time.sleep(3)
     while not rospy.is_shutdown():
-        print("------ parking mode on ------")
-        pose = Pose()
-        cur_pose = pose.get_curpose()
-        mid_pose, goal_pose = parker.calc_drive_pose()
-
-        print("parking: steer RIGHT!!!")
-        print("mid:", mid_pose)
-        cnt = 0
-        drive(0, 0)
-        time.sleep(0.1)
-        while cur_pose[1] < mid_pose[1]:
-            drive(1, -2.5)
-            time.sleep(0.096)
-            cur_pose = pose.calc_behind(20, -2.5)
-            print("cur_pose:", cur_pose)
-            cnt += 1
-
-        print("parking: steer LEFT!!")
-        print("goal:", goal_pose)
-        for t in range(cnt):
-            drive(-1, -2.5)
-            time.sleep(0.096)
-            cur_pose = pose.calc_behind(-20, -2.5)
-            print("cur_pose:", cur_pose)
+        # print("------ parking mode on ------")
+        # pose = Pose()
+        # cur_pose = pose.get_curpose()
+        # mid_pose, goal_pose = parker.calc_drive_pose()
+        #
+        # print("parking: steer RIGHT!!!")
+        # print("mid:", mid_pose)
+        # cnt = 0
+        # drive(0, 0)
+        # time.sleep(0.1)
+        # while cur_pose[1] < mid_pose[1]:
+        #     drive(1, -2.5)
+        #     time.sleep(0.096)
+        #     cur_pose = pose.calc_behind(20, -2.5)
+        #     print("cur_pose:", cur_pose)
+        #     cnt += 1
+        #
+        # print("parking: steer LEFT!!")
+        # print("goal:", goal_pose)
+        # for t in range(cnt):
+        #     drive(-1, -2.5)
+        #     time.sleep(0.096)
+        #     cur_pose = pose.calc_behind(-20, -2.5)
+        #     print("cur_pose:", cur_pose)
 
 
         # r = rospy.Rate(10)
@@ -231,19 +231,19 @@ if __name__ == "__main__":
             if distance == None:
                 continue
 
-            if 0.23 < distance < 0.275:
+            if 0.165 < distance < 0.245:
                 break
 
-            if distance > 0.27:
-                drive(yaw*3, 2)
+            if distance > 0.245:
+                #drive(yaw*3, 2)
                 time.sleep(0.5)
-            elif distance < 0.24:
-                drive(yaw*3, -2)
+            elif distance < 0.165:
+                #drive(yaw*3, -2)
                 time.sleep(0.5)
 
 
 
-        break
+        #break
 
         #
         # print("Straight")
