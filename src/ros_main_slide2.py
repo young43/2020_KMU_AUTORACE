@@ -30,7 +30,7 @@ from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from ObstacleDetector import ObstacleDetector, Position
 from posecal import Pose
 from pidcal import PidCal
-from slidewindow import SlideWindow        # slidewindow
+from slidewindow2 import SlideWindow        # slidewindow
 from warper import Warper
 from CurveDetector import Curve
 from StopDetector import StopDetector
@@ -200,7 +200,9 @@ def calc_speed(MODE, curve_detector, pid):
                 g_speed += 0.1
 
 
-    elif MODE == 1 or MODE == 2:   # 장애물 전
+    elif MODE == 1:   # 장애물 전
+        g_speed = 5     # 5
+    elif MODE == 2:
         g_speed = 5
     elif MODE == 3:  # 횡단보도 전
         g_speed = 7.45
@@ -270,15 +272,15 @@ def avoidance(first_detect, POS, obs_cnt):
         if POS == 1:  # 왼쪽
             if obs_cnt == 1:  # normal case
                 for theta in range(270, 360, 10):
-                    st = 0.265 * np.sin(theta * np.pi / 180)  # 245
+                    st = 0.265 * np.sin(theta * np.pi / 180)    # 245
                     drive(-st, 5)
-                    # print(-st)
+                    #print(-st)
                     time.sleep(0.06)
 
                 for theta in range(360, 500, 9):
-                    st = 0.245 * np.sin(theta * np.pi / 180)  # 265
+                    st = 0.245 * np.sin(theta * np.pi / 180)    # 265
                     drive(-st, 5)
-                    # print(-st)
+                    #print(-st)
                     time.sleep(0.06)
             else:
                 print("Reverse case")
@@ -376,6 +378,8 @@ def main():
 
     stop_cnt = 0
 
+    cross_flag = False
+
     while not rospy.is_shutdown():
         global warper
 
@@ -410,6 +414,7 @@ def main():
                     rospy.sleep(0.1)
 
                 curve_detector.curve_count += 1
+                cross_flag = True
 
             elif MODE == 0 and time.time()-start_time > 40:  # start 40
                 print("------ STOP LINE DETECT ------")
@@ -419,8 +424,17 @@ def main():
                 curve_detector.curve_count = 0
                 start_time = time.time()
                 stop_cnt += 1
+                cross_flag = False
 
             cross_cnt += 1
+
+
+        # 횡단보도를 인식하지 못했을 때의 예외처리
+        if MODE == 3 and not cross_flag and (obs_time != 0 and time.time()-obs_time > 20):
+            print("NON CROSS DETECT!!!")
+            MODE = 0
+            curve_detector.curve_count += 1
+
 
         # curve 2번 돌고나서 obstacle
         if MODE == 2:
@@ -429,7 +443,6 @@ def main():
 
             if obs_cnt == 0 and POS.value != 0:
                 obs_time = time.time()
-                # first_detect = POS.value
 
             if POS.value != 0:
                 # 왼오왼, 오왼오 통합
@@ -446,7 +459,7 @@ def main():
                         st = 0.22 * np.sin(theta * np.pi / 180)
                         drive(st, 4)
                         time.sleep(0.05)
-                else:
+                elif first_detect == 1:     # Part2. 왼오왼
                     for theta in range(480, 545, 9):
                         st = 0.22 * np.sin(theta * np.pi / 180)
                         drive(-st, 4)
@@ -455,6 +468,7 @@ def main():
             MODE = 3
             obs_cnt = 4
             print("obstacle detect finish")
+
 
         # parking
         if MODE == 4:
@@ -497,11 +511,16 @@ def main():
                     if distance != None and 0.23 < distance < 0.27:
                         break
 
+                    if yaw*10 < 0.2:
+                        yaw *= 10
+                    else:
+                        yaw *= 4
+
                     if distance > 0.27:
-                        drive(yaw * 4, 2)
+                        drive(yaw, 2)
                         time.sleep(0.5)
                     elif distance < 0.23:
-                        drive(yaw * 4, -2)
+                        drive(yaw, -2)
                         time.sleep(0.5)
 
                 rospy.on_shutdown(finish)
@@ -518,12 +537,8 @@ def main():
 
             pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count), 6)
 
-            # calc_speed(MODE, curve_detector, pid)
-            # drive(pid, g_speed)
-
-            if MODE != 4 and time.time() - start_time < 2.5:
-                g_speed = 9
-                drive(0, g_speed)
+            if stop_cnt == 0 and MODE != 4 and time.time() - start_time < 2.5:
+                drive(0, 9)
             else:
                 calc_speed(MODE, curve_detector, pid)
                 drive(pid, g_speed)
@@ -532,12 +547,8 @@ def main():
             x_location = x_location_old
             pid = round(pidcal.pid_control(int(x_location_old), curve_detector.curve_count), 6)
 
-            # calc_speed(MODE, curve_detector, pid)
-            # drive(pid, g_speed)
-
-            if MODE != 4 and time.time() - start_time < 2.5:
-                g_speed = 9
-                drive(0, g_speed)
+            if stop_cnt == 0 and MODE != 4 and time.time() - start_time < 2.5:
+                drive(0, 9)
             else:
                 calc_speed(MODE, curve_detector, pid)
                 drive(pid, g_speed)
@@ -580,6 +591,9 @@ def main():
 
     out.release()
     out2.release()
+
+
+
 
 
 if __name__ == "__main__":
