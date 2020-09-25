@@ -275,7 +275,7 @@ class SlideWindow:
         # if lefty != [] and leftx != [] and len(leftx) > len(rightx):
 
         if lefty != [] and leftx != [] and ((len(leftx) > len(rightx)) or (len(leftx) > 300)):
-            print(len(leftx))
+            print("left line")
             left_fit = np.polyfit(lefty, leftx, 2)
             lx_current = np.int(np.polyval(left_fit, 400))
             x_location = lx_current + int(self.lane_width_hold * 0.5)
@@ -292,6 +292,7 @@ class SlideWindow:
                     x_location = lx_current + int(self.lane_width_hold * 0.57)
 
         elif righty != [] and rightx != []:     # and len(rightx) > 300
+            print("right line")
             right_fit = np.polyfit(righty, rightx, 2)
             rx_current = np.int(np.polyval(right_fit, 400))
             x_location = rx_current - int(self.lane_width_hold * 0.5)

@@ -43,7 +43,7 @@ motor_pub = None
 motor_msg = None
 ar_data = None
 MODE = 0
-g_speed = 8
+g_speed = 10.5
 
 now = datetime.now()
 
@@ -111,7 +111,7 @@ def img_process(img):
     cols, rows, ch = img.shape
     brightness = np.sum(img) / (255 * cols * rows)
 
-    minimum_brightness = 1
+    minimum_brightness = 0.8
     ratio = brightness / minimum_brightness
     bright_img = cv2.convertScaleAbs(img, alpha=1 / ratio, beta=0)
 
@@ -165,46 +165,59 @@ def warpper_process(img):
     return thres_img
 
 
-# def calc_speed(MODE, curve_detector):
-#     speed = 11
-#
-#     if MODE == 1 or MODE == 2:  # 장애물 전
-#         speed = 5
-#     elif MODE == 3:     # 횡단보도 전
-#         speed = 7.45
-#     elif MODE == 4:     # 주차
-#         speed = 5
-#     elif curve_detector.curve_count >= 3:
-#         speed = 9.5
-#
-#
-#     return speed
-
-
-# test1
 def calc_speed(MODE, curve_detector, pid):
     global g_speed
 
-    if MODE == 0:
-        if curve_detector.curve_count < 2:
-            if abs(pid) > 0.055 and 10.5 < g_speed:
-                g_speed -= 0.15
-            elif g_speed < 11.0:
-                g_speed += 0.15
+    if curve_detector.curve_count < 2:
+        if -0.055 < pid and pid > 0.055 and g_speed > 9:
+            g_speed -= 0.3
+        elif g_speed < 11:
+            g_speed += 0.3
 
-        elif curve_detector.curve_count >= 3:
-            if abs(pid) < 0.065 and 10.5 < g_speed:
-                g_speed -= 0.2
-            elif g_speed < 10.8:
-                g_speed += 0.1
-
-
-    elif MODE == 1 or MODE == 2:   # 장애물 전
-        g_speed = 5
-    elif MODE == 3:  # 횡단보도 전
+    elif MODE == 1 or MODE == 2:  # 장애물 전
+        g_speed = 7.45    # speed = 7.45
+    elif MODE == 3:     # 횡단보도 전
         g_speed = 7.45
+    elif MODE == 4:     # 주차
+        g_speed = 5
+    elif curve_detector.curve_count >= 3:
+        if -0.1 < pid and pid > 0.1 and g_speed > 10:
+            g_speed -= 0.3
+        elif g_speed <= 11:
+            g_speed += 0.3
+
+    return g_speed
 
 
+
+# test1
+# def calc_speed(MODE, curve_detector):
+#     global g_speed
+#
+#     speed = 11
+#
+#     if MODE == 1 or MODE == 2:   # 장애물 전
+#         speed = 5
+#     elif MODE == 3:  # 횡단보도 전
+#         speed = 7
+#
+#     # elif curve_detector.curve_count >= 3:
+#     #     speed = 10
+#
+#     return speed
+
+# test2
+# def calc_speed(MODE, curve_detector):
+#     speed = 5
+#
+#     if MODE == 1 or MODE == 2:  # 미션 구간(장애물, 횡단보도)
+#         speed = 5
+#     elif MODE == 3:  # 주차
+#         speed = 5
+#     elif curve_detector.curve_count >= 4:
+#         speed = 5
+#
+#     return speed
 
 def avoidance(first_detect, POS, obs_cnt):
     # Part2. 왼오왼
@@ -212,54 +225,56 @@ def avoidance(first_detect, POS, obs_cnt):
         if POS == 1:
             if obs_cnt == 0 or obs_cnt == 2:   # normal case
                 for theta in range(270, 360, 9):
-                    st = 0.27 * np.sin(theta * np.pi / 180)
-                    drive(-st, 5)
+                    st = 0.24 * np.sin(theta * np.pi / 180)
+                    drive(-st, 7.45)
                     #print(-st)
-                    time.sleep(0.06)
+                    time.sleep(0.042)
 
-                for theta in range(360, 500, 9):
-                    st = 0.22 * np.sin(theta * np.pi / 180)
-                    drive(-st, 5)
+                for theta in range(360, 500, 10):
+                    st = 0.24 * np.sin(theta * np.pi / 180)
+                    drive(-st, 7.45)
                     #print(-st)
-                    time.sleep(0.06)
+                    time.sleep(0.042)
             else:       # 반대 케이스
                 print("Reverse case")
                 for theta in range(270, 360, 9):
                     st = 0.4 * np.sin(theta * np.pi / 180)
-                    drive(st, 5)
+                    drive(st, 7.45)
                     #print(st)
-                    time.sleep(0.06)
+                    time.sleep(0.045)
 
                 for theta in range(360, 500, 10):
                     st = 0.3 * np.sin(theta * np.pi / 180)
-                    drive(st, 5)
+                    drive(st, 7.45)
                     #print(st)
-                    time.sleep(0.06)
+                    time.sleep(0.042)
 
 
-
+            #drive(0, 0)
+            #time.sleep(0.5)
         elif POS == 2:  # 오른쪽
             if obs_cnt == 1:  # normal case
-                for theta in range(270, 520, 9):
-                    st = 0.275 * np.sin(theta * np.pi / 180)
-                    drive(st, 5)
+                for theta in range(270, 510, 9):
+                    st = 0.27 * np.sin(theta * np.pi / 180)
+                    drive(st, 7.45)
                     #print(st)
-                    time.sleep(0.06)
+                    time.sleep(0.04)
             else:
                 print("Reverse case")
                 for theta in range(270, 360, 9):
                     st = 0.4 * np.sin(theta * np.pi / 180)
-                    drive(-st, 5)
+                    drive(-st, 7.45)
                     #print(-st)
-                    time.sleep(0.06)
+                    time.sleep(0.045)
 
                 for theta in range(360, 500, 10):
                     st = 0.3 * np.sin(theta * np.pi / 180)
-                    drive(-st, 5)
+                    drive(-st, 7.45)
                     #print(-st)
-                    time.sleep(0.06)
+                    time.sleep(0.042)
 
-
+            #drive(0, 0)
+            #time.sleep(0.5)
 
     elif first_detect == 2:   # Right first
         # Part1. 오왼오
@@ -268,57 +283,61 @@ def avoidance(first_detect, POS, obs_cnt):
             if obs_cnt == 1:  # normal case
                 for theta in range(270, 360, 10):
                     st = 0.245 * np.sin(theta * np.pi / 180)
-                    drive(-st, 5)
+                    drive(-st, 7.45)
                     #print(-st)
-                    time.sleep(0.06)
+                    time.sleep(0.045)
 
-                for theta in range(360, 500, 9):
-                    st = 0.265 * np.sin(theta * np.pi / 180)
-                    drive(-st, 5)
+                for theta in range(360, 500, 10):
+                    st = 0.25 * np.sin(theta * np.pi / 180)
+                    drive(-st, 7.45)
                     #print(-st)
-                    time.sleep(0.06)
+                    time.sleep(0.042)
             else:
                 print("Reverse case")
                 for theta in range(270, 360, 9):
                     st = 0.4 * np.sin(theta * np.pi / 180)
-                    drive(st, 5)
+                    drive(st, 7.45)
                     #print(st)
-                    time.sleep(0.06)
+                    time.sleep(0.045)
 
                 for theta in range(360, 500, 10):
                     st = 0.3 * np.sin(theta * np.pi / 180)
-                    drive(st, 5)
+                    drive(st, 7.45)
                     #print(st)
-                    time.sleep(0.06)
+                    time.sleep(0.042)
 
+            #drive(0, 0)
+            #time.sleep(0.5)
 
         elif POS == 2:  # 오른쪽
             if obs_cnt == 0 or obs_cnt == 2:  # normal case
                 for theta in range(270, 360, 9):
-                    st = 0.24 * np.sin(theta * np.pi / 180)
-                    drive(st, 5)
+                    st = 0.26 * np.sin(theta * np.pi / 180)
+                    drive(st, 7.45)
                     #print(st)
-                    time.sleep(0.06)
+                    time.sleep(0.045)
 
-                for theta in range(360, 500, 8):
+                for theta in range(360, 500, 9):
                     st = 0.19 * np.sin(theta * np.pi / 180)
-                    drive(st, 5)
+                    drive(st, 7.45)
                     #print(st)
-                    time.sleep(0.06)
+                    time.sleep(0.04)
             else:
                 print("Reverse case")
                 for theta in range(270, 360, 9):
                     st = 0.4 * np.sin(theta * np.pi / 180)
-                    drive(-st, 5)
+                    drive(-st, 7.45)
                     #print(-st)
-                    time.sleep(0.06)
+                    time.sleep(0.045)
 
                 for theta in range(360, 500, 10):
                     st = 0.3 * np.sin(theta * np.pi / 180)
-                    drive(-st, 5)
+                    drive(-st, 7.45)
                     #print(-st)
-                    time.sleep(0.06)
+                    time.sleep(0.04)
 
+            #drive(0, 0)
+            #time.sleep(0.5)
 
 
 def finish():
@@ -390,8 +409,6 @@ def main():
         slideImage, x_location = slidewindow.slidewindow(process_img2)
         # curve 2번 돌고나서 obstacle
         POS, circle, distance = obstacle_detector.check(obstacles)
-
-
 
         # 시작점 체크
         # 횡단보도 및 시작점
@@ -496,6 +513,10 @@ def main():
                 rospy.on_shutdown(finish)
                 break
 
+
+
+        speed_default = calc_speed(MODE, curve_detector, g_speed)
+
         if x_location != None:
             if x_location_old != None:
                 if np.abs(x_location - x_location_old) < 60:
@@ -504,19 +525,20 @@ def main():
                     x_location = x_location_old
 
             pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count), 6)
-            calc_speed(MODE, curve_detector, pid)
-
-            # if MODE != 4 and time.time() - start_time < 5:
-            #     speed_default = 9
-            drive(pid, g_speed)
+            if MODE != 4 and time.time() - start_time < 5:
+                speed_default = 9
+            if abs(pid) > 0.25 and MODE == 0:
+                speed_default -= 1
+            drive(pid, speed_default)
 
         else:
             x_location = x_location_old
             pid = round(pidcal.pid_control(int(x_location_old), curve_detector.curve_count), 6)
-            calc_speed(MODE, curve_detector, pid)
-            # if MODE != 4 and time.time()-start_time < 5:
-            #     speed_default = 9
-            drive(pid, g_speed)
+            if MODE != 4 and time.time()-start_time < 5:
+                speed_default = 9
+            if abs(pid) > 0.25 and MODE == 0:
+                speed_default -= 1
+            drive(pid, speed_default)
 
         curve_detector.update(pid)
         curve_detector.count_curve(start_time)
@@ -525,10 +547,7 @@ def main():
         # cv2.imshow("origin", re_image)
         # cv2.imshow("processImage", tempImg)
 
-        print(round(pid, 4), g_speed, curve_detector.curve_count)
-        # calc_speed(MODE, curve_detector, pid)
-
-
+        print(round(pid, 2), x_location, MODE)
         cv2.putText(slideImage, 'PID %f' % pid, (0, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
         cv2.putText(slideImage, 'x_location %d' % x_location, (0, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255),
                     2)
@@ -550,14 +569,14 @@ def main():
         elif MODE == 0 and stop_cnt == 3:
             MODE = 4  # parking
 
+
+        g_speed = speed_default
+
         out.write(slideImage)
         out2.write(cv_image)
 
     out.release()
     out2.release()
-
-
-
 
 
 def test():
@@ -656,7 +675,7 @@ def test():
 
         # 횡단보도 및 시작점
         if stop_detector.check_crocss_walk(warp_img):
-            if cross_cnt%2 == 0 and (MODE == 3 and obs_cnt > OBSTACLE_NUM):  # cross
+            if cross_cnt % 2 == 0:  # cross
                 print("------ CROSS WALK DETECT ------")
                 drive(0, 0)
                 rospy.sleep(6)
@@ -678,6 +697,9 @@ def test():
 
             cross_cnt += 1
 
+
+
+
         if x_location != None:
             if x_location_old != None:
                 if np.abs(x_location - x_location_old) < 60:
@@ -698,7 +720,7 @@ def test():
         curve_detector.update(pid)
         curve_detector.count_curve(start_time)
 
-        print(round(pid, 4), g_speed, curve_detector.curve_count)
+        print(round(pid, 5), g_speed, curve_detector.curve_count)
         calc_speed(MODE, curve_detector, pid)
 
         cv2.putText(slideImage, 'PID %f' % pid, (0, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
@@ -714,15 +736,12 @@ def test():
         cv2.line(slideImage, (x_location, 380), (318, 479), (0, 255, 255), 3)
         # cv2.imshow("slidewindow", slideImage)
 
-
-
         if MODE == 0 and curve_detector.curve_count == 2:
             MODE = 1  # cross_walk
         elif MODE == 1 and obs_cnt < OBSTACLE_NUM:
             MODE = 2  # obstacle
         elif MODE == 0 and stop_cnt == 3:
             MODE = 4  # parking
-
 
         #out.write(slideImage)
         #out2.write(re_image)
@@ -732,8 +751,8 @@ def test():
 
 
 if __name__ == "__main__":
-    main()
-    # test()
+    # main()
+    test()
 
 
 
