@@ -178,7 +178,7 @@ class SlideWindow:
         if leftx_current == None and rightx_current == None:
             histogram = np.sum(img[height // 2:, :], axis=0)
             leftx_current = np.argmax(histogram[:self.mid_point-80])
-            rightx_current = np.argmax(histogram[self.mid_point-80:]) + (self.mid_point-80)
+            rightx_current = np.argmax(histogram[self.mid_point+80:]) + (self.mid_point+80)
 
         # cv2.imshow("w_roi", cf_img)
         

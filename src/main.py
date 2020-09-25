@@ -8,7 +8,7 @@ import numpy as np
 import math
 
 
-from slidewindow import SlideWindow
+from slidewindow2 import SlideWindow
 from warper import Warper
 from pidcal import PidCal
 from CurveDetector import Curve
@@ -141,7 +141,7 @@ def main():
     global warper
 
     flag = False
-    cap = cv2.VideoCapture("../capture/origin0924.avi")
+    cap = cv2.VideoCapture("../capture/0925_origin171814.avi")
 
     x_location_old = None
 
