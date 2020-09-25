@@ -121,7 +121,7 @@ def img_process(img):
     blur = cv2.GaussianBlur(gray, (kernel_size, kernel_size), 0)
 
     low_threshold = 45
-    high_threshold = 58
+    high_threshold = 60
     edge = cv2.Canny(np.uint8(blur), low_threshold, high_threshold)
 
     roi = roi_interest(edge)

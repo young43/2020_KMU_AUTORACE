@@ -43,7 +43,7 @@ motor_pub = None
 motor_msg = None
 ar_data = None
 MODE = 0
-g_speed = 8
+g_speed = 8.5
 
 now = datetime.now()
 
@@ -366,9 +366,6 @@ def main():
 
     first_detect = 0
 
-    speed_default = 0
-    speed_obstacle = 0
-
     x_location = None
     x_location_old = None
 
@@ -496,6 +493,8 @@ def main():
                 rospy.on_shutdown(finish)
                 break
 
+
+
         if x_location != None:
             if x_location_old != None:
                 if np.abs(x_location - x_location_old) < 60:
@@ -550,6 +549,7 @@ def main():
         elif MODE == 0 and stop_cnt == 3:
             MODE = 4  # parking
 
+
         out.write(slideImage)
         out2.write(cv_image)
 
@@ -592,8 +592,6 @@ def test():
     curve_detector = Curve()
     stop_detector = StopDetector()
 
-    speed_default = 0
-    speed_obstacle = 0
 
     obs_cnt = 0
     stop_cnt = 0
@@ -607,8 +605,6 @@ def test():
     x_location = None
     x_location_old = None
 
-    # only test code
-    # curve_detector.curve_count = 1
 
     while not rospy.is_shutdown():
         global warper
