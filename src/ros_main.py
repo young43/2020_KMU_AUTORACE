@@ -43,7 +43,8 @@ motor_pub = None
 motor_msg = None
 ar_data = None
 MODE = 0
-g_speed = 8.5
+g_speed = 9
+first_detect = 0
 
 now = datetime.now()
 
@@ -188,13 +189,13 @@ def calc_speed(MODE, curve_detector, pid):
     if MODE == 0:
         if curve_detector.curve_count < 2:
             if abs(pid) > 0.055 and 10.5 < g_speed:
-                g_speed -= 0.15
+                g_speed -= 0.3
             elif g_speed < 11.0:
-                g_speed += 0.15
+                g_speed += 0.1
 
         elif curve_detector.curve_count >= 3:
-            if abs(pid) < 0.065 and 10.5 < g_speed:
-                g_speed -= 0.2
+            if abs(pid) < 0.055 and 10.5 < g_speed:
+                g_speed -= 0.8
             elif g_speed < 10.8:
                 g_speed += 0.1
 
@@ -203,6 +204,8 @@ def calc_speed(MODE, curve_detector, pid):
         g_speed = 5
     elif MODE == 3:  # 횡단보도 전
         g_speed = 7.45
+    elif MODE == 4:
+        g_speed = 5
 
 
 
@@ -227,13 +230,13 @@ def avoidance(first_detect, POS, obs_cnt):
                 for theta in range(270, 360, 9):
                     st = 0.4 * np.sin(theta * np.pi / 180)
                     drive(st, 5)
-                    #print(st)
+                    print(st)
                     time.sleep(0.06)
 
                 for theta in range(360, 500, 10):
                     st = 0.3 * np.sin(theta * np.pi / 180)
                     drive(st, 5)
-                    #print(st)
+                    print(st)
                     time.sleep(0.06)
 
 
@@ -250,13 +253,13 @@ def avoidance(first_detect, POS, obs_cnt):
                 for theta in range(270, 360, 9):
                     st = 0.4 * np.sin(theta * np.pi / 180)
                     drive(-st, 5)
-                    #print(-st)
+                    print(-st)
                     time.sleep(0.06)
 
                 for theta in range(360, 500, 10):
                     st = 0.3 * np.sin(theta * np.pi / 180)
                     drive(-st, 5)
-                    #print(-st)
+                    print(-st)
                     time.sleep(0.06)
 
 
@@ -282,13 +285,13 @@ def avoidance(first_detect, POS, obs_cnt):
                 for theta in range(270, 360, 9):
                     st = 0.4 * np.sin(theta * np.pi / 180)
                     drive(st, 5)
-                    #print(st)
+                    print(st)
                     time.sleep(0.06)
 
                 for theta in range(360, 500, 10):
                     st = 0.3 * np.sin(theta * np.pi / 180)
                     drive(st, 5)
-                    #print(st)
+                    print(st)
                     time.sleep(0.06)
 
 
@@ -310,13 +313,13 @@ def avoidance(first_detect, POS, obs_cnt):
                 for theta in range(270, 360, 9):
                     st = 0.4 * np.sin(theta * np.pi / 180)
                     drive(-st, 5)
-                    #print(-st)
+                    print(-st)
                     time.sleep(0.06)
 
                 for theta in range(360, 500, 10):
                     st = 0.3 * np.sin(theta * np.pi / 180)
                     drive(-st, 5)
-                    #print(-st)
+                    print(-st)
                     time.sleep(0.06)
 
 
@@ -332,6 +335,7 @@ def main():
     global MODE
     global ar_data
     global g_speed
+    global first_detect
 
     rospy.init_node("racecar")
     motor_pub = rospy.Publisher("xycar_motor", xycar_motor, queue_size=1)
@@ -342,15 +346,18 @@ def main():
     h, w = 480, 640
 
     out = cv2.VideoWriter(
-        '/home/nvidia/xycar_ws/src/racecar/video/slide{}{}{}.avi'.format(now.day, now.hour, now.minute),
+        '/home/nvidia/xycar_ws/src/racecar/video/0925_slide{}{}{}.avi'.format(now.day, now.hour, now.minute),
         cv2.VideoWriter_fourcc("M", "J", "P", "G"), 30, (w, h))
 
     out2 = cv2.VideoWriter(
-        "/home/nvidia/xycar_ws/src/racecar/video/origin{}{}{}.avi".format(now.day, now.hour, now.minute),
+        "/home/nvidia/xycar_ws/src/racecar/video/0925_origin{}{}{}.avi".format(now.day, now.hour, now.minute),
         cv2.VideoWriter_fourcc("M", "J", "P", "G"), 30, (w, h))
 
     print("------------- auto_race start!!! -------------")
     drive(0, 0)
+    time.sleep(0.1)
+
+
     rospy.sleep(3)
 
     obstacle_detector = ObstacleDetector()
@@ -363,8 +370,6 @@ def main():
     cross_cnt = 0
 
     obs_cnt = 0
-
-    first_detect = 0
 
     x_location = None
     x_location_old = None
@@ -406,7 +411,7 @@ def main():
 
                 curve_detector.curve_count += 1
 
-            elif MODE == 0 and time.time()-start_time > 40:  # start
+            elif MODE == 0 and time.time()-start_time > 38:  # start 40
                 print("------ STOP LINE DETECT ------")
                 MODE = 0
                 obs_cnt = 0
@@ -419,9 +424,12 @@ def main():
 
         # curve 2번 돌고나서 obstacle
         if MODE == 2:
+            if first_detect == 0:
+                first_detect = POS.value
+
             if obs_cnt == 0 and POS.value != 0:
                 obs_time = time.time()
-                first_detect = POS.value
+                # first_detect = POS.value
 
             if POS.value != 0:
                 # 왼오왼, 오왼오 통합
@@ -436,6 +444,11 @@ def main():
                 for theta in range(480, 545, 9):
                     st = 0.22 * np.sin(theta * np.pi / 180)
                     drive(st, 4)
+                    time.sleep(0.05)
+            else:
+                for theta in range(480, 545, 9):
+                    st = 0.22 * np.sin(theta * np.pi / 180)
+                    drive(-st, 4)
                     time.sleep(0.05)
 
             MODE = 3
@@ -503,19 +516,24 @@ def main():
                     x_location = x_location_old
 
             pid = round(pidcal.pid_control(int(x_location), curve_detector.curve_count), 6)
-            calc_speed(MODE, curve_detector, pid)
 
-            # if MODE != 4 and time.time() - start_time < 5:
-            #     speed_default = 9
-            drive(pid, g_speed)
+
+            if MODE != 4 and time.time() - start_time < 2.5:
+                g_speed = 9
+                drive(0, g_speed)
+            else:
+                calc_speed(MODE, curve_detector, pid)
+                drive(pid, g_speed)
 
         else:
             x_location = x_location_old
             pid = round(pidcal.pid_control(int(x_location_old), curve_detector.curve_count), 6)
-            calc_speed(MODE, curve_detector, pid)
-            # if MODE != 4 and time.time()-start_time < 5:
-            #     speed_default = 9
-            drive(pid, g_speed)
+            if MODE != 4 and time.time() - start_time < 2.5:
+                g_speed = 9
+                drive(0, g_speed)
+            else:
+                calc_speed(MODE, curve_detector, pid)
+                drive(pid, g_speed)
 
         curve_detector.update(pid)
         curve_detector.count_curve(start_time)

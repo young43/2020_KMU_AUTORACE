@@ -16,8 +16,8 @@ class SlideWindow:
         self.pre_rightx = 0
 
         self.pre_xlocation = 0
-        self.lane_width_hold = 250
-        # self.lane_width_hold = 300
+        self.lane_width_hold = 240
+        # self.lane_width_hold = 250
 
         self.line_flag = 0
 
@@ -143,12 +143,12 @@ class SlideWindow:
 
 	
         if left_start_x != None and right_start_x == None:
-            right_start_x = int(min(width-50, left_start_x + (self.lane_width_hold)))
+            right_start_x = int(min(width-100, left_start_x + (self.lane_width_hold)))
             self.pre_rightx = right_start_x
             self.line_flag = 1
 
         if right_start_x != None and left_start_x == None:
-            left_start_x = int(max(50, right_start_x - (self.lane_width_hold)))
+            left_start_x = int(max(100, right_start_x - (self.lane_width_hold)))
             self.pre_leftx = left_start_x
             self.line_flag = 2
 	
@@ -291,7 +291,7 @@ class SlideWindow:
                 if -7 < slope < 0:
                     x_location = lx_current + int(self.lane_width_hold * 0.57)
 
-        elif righty != [] and rightx != []:     # and len(rightx) > 300
+        elif righty != [] and rightx != [] and len(rightx) > 250:     # and len(rightx) > 300
             print("right line")
             right_fit = np.polyfit(righty, rightx, 2)
             rx_current = np.int(np.polyval(right_fit, 400))
