@@ -189,13 +189,13 @@ def calc_speed(MODE, curve_detector, pid):
     if MODE == 0:
         if curve_detector.curve_count < 2:
             if abs(pid) > 0.055 and 10.5 < g_speed:
-                g_speed -= 0.3
+                g_speed -= 0.5
             elif g_speed < 11.0:
                 g_speed += 0.1
 
         elif curve_detector.curve_count >= 3:
             if abs(pid) < 0.055 and 10.5 < g_speed:
-                g_speed -= 0.8
+                g_speed -= 0.7
             elif g_speed < 10.8:
                 g_speed += 0.1
 
