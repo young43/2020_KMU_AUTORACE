@@ -8,7 +8,7 @@ import numpy as np
 import math
 
 
-from slidewindow2 import SlideWindow
+from slidewindow import SlideWindow
 from warper import Warper
 from pidcal import PidCal
 from CurveDetector import Curve
@@ -50,7 +50,7 @@ def img_process(img):
     cols, rows, ch = img.shape
     brightness = np.sum(img) / (255 * cols * rows)
 
-    minimum_brightness = 0.5
+    minimum_brightness = 1
     ratio = brightness / minimum_brightness
     bright_img = cv2.convertScaleAbs(img, alpha = 1 / ratio, beta = 0)
 
@@ -141,7 +141,7 @@ def main():
     global warper
 
     flag = False
-    cap = cv2.VideoCapture("../capture/0925_origin171814.avi")
+    cap = cv2.VideoCapture("../capture/0925_origin171717.avi")
 
     x_location_old = None
 

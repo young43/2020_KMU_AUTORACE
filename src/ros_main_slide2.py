@@ -188,15 +188,15 @@ def calc_speed(MODE, curve_detector, pid):
 
     if MODE == 0:
         if curve_detector.curve_count < 2:
-            if abs(pid) > 0.055 and 10.5 < g_speed:
+            if abs(pid) > 0.055 and 10 < g_speed:
                 g_speed -= 0.5
             elif g_speed < 11.0:
                 g_speed += 0.1
 
         elif curve_detector.curve_count >= 3:
-            if abs(pid) < 0.055 and 10.5 < g_speed:
-                g_speed -= 0.7
-            elif g_speed < 10.6:
+            if abs(pid) > 0.055 and 8 < g_speed:
+                g_speed -= 1
+            elif g_speed < 10:
                 g_speed += 0.1
 
 
@@ -348,11 +348,11 @@ def main():
     h, w = 480, 640
 
     out = cv2.VideoWriter(
-        '/home/nvidia/xycar_ws/src/racecar/video/0925_slide{}{}{}.avi'.format(now.day, now.hour, now.minute),
+        '/home/nvidia/xycar_ws/src/racecar/video/0926_slide{}{}{}.avi'.format(now.day, now.hour, now.minute),
         cv2.VideoWriter_fourcc("M", "J", "P", "G"), 30, (w, h))
 
     out2 = cv2.VideoWriter(
-        "/home/nvidia/xycar_ws/src/racecar/video/0925_origin{}{}{}.avi".format(now.day, now.hour, now.minute),
+        "/home/nvidia/xycar_ws/src/racecar/video/0926_origin{}{}{}.avi".format(now.day, now.hour, now.minute),
         cv2.VideoWriter_fourcc("M", "J", "P", "G"), 30, (w, h))
 
     print("------------- auto_race start!!! -------------")
@@ -398,7 +398,6 @@ def main():
         POS, circle, distance = obstacle_detector.check(obstacles)
 
 
-
         # 시작점 체크
         # 횡단보도 및 시작점
         # and (MODE == 3 or MODE == 0)
@@ -427,13 +426,6 @@ def main():
                 cross_flag = False
 
             cross_cnt += 1
-
-
-        # 횡단보도를 인식하지 못했을 때의 예외처리
-        if MODE == 3 and not cross_flag and (obs_time != 0 and time.time()-obs_time > 20):
-            print("NON CROSS DETECT!!!")
-            MODE = 0
-            curve_detector.curve_count += 1
 
 
         # curve 2번 돌고나서 obstacle

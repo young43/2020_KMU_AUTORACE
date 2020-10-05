@@ -188,19 +188,21 @@ def calc_speed(MODE, curve_detector, pid):
 
     if MODE == 0:
         if curve_detector.curve_count < 2:
-            if abs(pid) > 0.055 and 10.5 < g_speed:
+            if abs(pid) > 0.055 and 10 < g_speed:
                 g_speed -= 0.5
             elif g_speed < 11.0:
                 g_speed += 0.1
 
         elif curve_detector.curve_count >= 3:
-            if abs(pid) < 0.055 and 10.5 < g_speed:
+            if abs(pid) < 0.055 and 9 < g_speed:
                 g_speed -= 0.7
-            elif g_speed < 10.6:
+            elif g_speed < 6.5:
                 g_speed += 0.1
 
 
-    elif MODE == 1 or MODE == 2:   # 장애물 전
+    elif MODE == 1:   # 장애물 전
+        g_speed = 5     # 5
+    elif MODE == 2:
         g_speed = 5
     elif MODE == 3:  # 횡단보도 전
         g_speed = 7.45
@@ -346,11 +348,11 @@ def main():
     h, w = 480, 640
 
     out = cv2.VideoWriter(
-        '/home/nvidia/xycar_ws/src/racecar/video/0925_slide{}{}{}.avi'.format(now.day, now.hour, now.minute),
+        '/home/nvidia/xycar_ws/src/racecar/video/0926_slide{}{}{}.avi'.format(now.day, now.hour, now.minute),
         cv2.VideoWriter_fourcc("M", "J", "P", "G"), 30, (w, h))
 
     out2 = cv2.VideoWriter(
-        "/home/nvidia/xycar_ws/src/racecar/video/0925_origin{}{}{}.avi".format(now.day, now.hour, now.minute),
+        "/home/nvidia/xycar_ws/src/racecar/video/0926_origin{}{}{}.avi".format(now.day, now.hour, now.minute),
         cv2.VideoWriter_fourcc("M", "J", "P", "G"), 30, (w, h))
 
     print("------------- auto_race start!!! -------------")
